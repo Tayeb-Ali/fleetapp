@@ -38,6 +38,7 @@ return [
         'customs' => 'Customs & Clearance',
         'sales' => 'Sales',
         'warehouse' => 'Warehouse',
+        'accountant' => 'Accountant',
         'viewer' => 'View only',
     ],
 
@@ -75,7 +76,7 @@ return [
         'stage' => ['Stage', 'select'],
     ],
 
-    'create_fields' => ['brand', 'model', 'vin', 'fuel', 'pdate', 'supplier', 'cost', 'bl', 'voy', 'pol', 'pod', 'ship', 'arr', 'remarks'],
+    'create_fields' => ['brand', 'model', 'vin', 'fuel', 'mod', 'pdate', 'supplier', 'cost', 'bl', 'voy', 'pol', 'pod', 'ship', 'arr', 'remarks'],
     'create_required' => ['model', 'vin'],
 
     'transitions' => [

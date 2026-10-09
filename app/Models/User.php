@@ -30,6 +30,7 @@ class User extends Authenticatable
         'customs' => 'Customs & Clearance',
         'sales' => 'Sales',
         'warehouse' => 'Warehouse',
+        'accountant' => 'Accountant',
         'viewer' => 'View only',
     ];
 

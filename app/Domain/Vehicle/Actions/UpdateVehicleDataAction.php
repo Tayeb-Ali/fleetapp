@@ -24,7 +24,7 @@ class UpdateVehicleDataAction
 
         return match ($role) {
             'admin' => [
-                'brand', 'model', 'fuel', 'purchased_at', 'supplier', 'cost',
+                'brand', 'model', 'mod', 'fuel', 'purchased_at', 'supplier', 'cost',
                 'bl', 'voyage_no', 'pol', 'pod', 'destination', 'shipped_at', 'arrived_at',
                 'customs_no', 'customs_date', 'duty',
                 'warehouse_location', 'warehouse_in_at',
@@ -33,13 +33,14 @@ class UpdateVehicleDataAction
                 'remarks', 'stage',
             ],
             'purchaser' => [
-                'brand', 'model', 'fuel', 'purchased_at', 'supplier', 'cost',
+                'brand', 'model', 'mod', 'fuel', 'purchased_at', 'supplier', 'cost',
                 'bl', 'voyage_no', 'pol', 'pod', 'shipped_at', 'arrived_at', 'remarks',
             ],
             'tracker' => ['bl', 'voyage_no', 'pol', 'pod', 'destination', 'shipped_at', 'arrived_at', 'remarks'],
             'customs' => ['customs_no', 'customs_date', 'duty', 'remarks'],
             'warehouse' => ['warehouse_location', 'warehouse_in_at', 'receiver_name', 'delivered_at', 'remarks'],
             'sales' => ['sale_order_no', 'buyer_name', 'buyer_phone', 'sale_price', 'amount_paid', 'sold_at', 'remarks'],
+            'accountant' => ['supplier', 'cost', 'duty', 'sale_price', 'amount_paid', 'remarks'],
             default => [],
         };
     }
@@ -52,6 +53,7 @@ class UpdateVehicleDataAction
         $all = [
             'brand' => 'nullable|string|max:255',
             'model' => 'nullable|string|max:255',
+            'mod' => 'nullable|string|max:255',
             'fuel' => 'nullable|string|max:255',
             'purchased_at' => 'nullable|date',
             'supplier' => 'nullable|string|max:500',

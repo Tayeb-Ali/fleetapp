@@ -21,7 +21,7 @@ class AttachmentDownloadController extends Controller
         $role = $user->getAttribute('role');
         $isAdmin = $role === 'admin' || (bool) ($user->getAttribute('is_admin') ?? false);
         $isOwner = $attachment->user_id !== null && (int) $attachment->user_id === (int) $user->getId();
-        $relatedRoles = ['admin', 'purchaser', 'tracker', 'customs', 'sales', 'warehouse'];
+        $relatedRoles = ['admin', 'purchaser', 'tracker', 'customs', 'sales', 'warehouse', 'accountant'];
         $hasRelatedRole = $role !== null && in_array($role, $relatedRoles, true);
 
         abort_unless($isAdmin || $isOwner || $hasRelatedRole, 403, 'You do not have permission to download this file.');

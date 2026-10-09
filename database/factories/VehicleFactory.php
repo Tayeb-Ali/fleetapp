@@ -37,6 +37,7 @@ class VehicleFactory extends Factory
             'brand' => $brand,
             'model' => $this->faker->randomElement($models[$brand] ?? ['Model X']),
             'fuel' => $this->faker->randomElement(['Petrol 2.7L', 'Diesel 2.8L', 'Hybrid 2.5L', 'Petrol 1.6L', 'Diesel 3.0L']),
+            'mod' => $this->faker->randomElement(['No', 'Yes']),
             'purchased_at' => $this->faker->optional(0.9)->date(),
             'supplier' => $this->faker->optional(0.7)->company(),
             'cost' => $this->faker->optional(0.9)->randomFloat(2, 8000, 65000),

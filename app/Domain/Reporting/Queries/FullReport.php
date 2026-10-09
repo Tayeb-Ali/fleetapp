@@ -14,7 +14,7 @@ class FullReport implements ReportQuery
 
     /** All vehicle fields except stage (legacy FK = C minus stage). */
     public const FIELDS = [
-        'brand', 'model', 'vin', 'fuel', 'pdate', 'supplier', 'cost',
+        'brand', 'model', 'vin', 'fuel', 'mod', 'pdate', 'supplier', 'cost',
         'bl', 'voy', 'pol', 'pod', 'dest', 'ship', 'arr',
         'cust_no', 'cust_date', 'duty', 'loc', 'in_date',
         'ord_no', 'client', 'phone', 'price', 'paid', 'sale_date',
@@ -26,6 +26,7 @@ class FullReport implements ReportQuery
         'model' => 'Model',
         'vin' => 'Chassis No. (VIN)',
         'fuel' => 'Fuel / Engine',
+        'mod' => 'Modified (Yes/No)',
         'pdate' => 'Purchase date',
         'supplier' => 'Supplier / Overseas Showroom',
         'cost' => 'Purchase price',

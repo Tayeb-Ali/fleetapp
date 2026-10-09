@@ -8,6 +8,8 @@ use App\Domain\Reporting\Contracts\ReportQuery;
 use App\Domain\Reporting\Queries\AvailableReport;
 use App\Domain\Reporting\Queries\CustomsReport;
 use App\Domain\Reporting\Queries\FullReport;
+use App\Domain\Reporting\Queries\OutstandingReport;
+use App\Domain\Reporting\Queries\ProfitReport;
 use App\Domain\Reporting\Queries\QualityCheckReport;
 use App\Domain\Reporting\Queries\SalesByBuyerReport;
 use App\Domain\Reporting\Queries\ShipmentsReport;
@@ -28,6 +30,8 @@ class ReportRegistry
             'shipments' => ShipmentsReport::class,
             'customs' => CustomsReport::class,
             'full' => FullReport::class,
+            'profit' => ProfitReport::class,
+            'outstanding' => OutstandingReport::class,
             'quality' => QualityCheckReport::class,
         ];
     }

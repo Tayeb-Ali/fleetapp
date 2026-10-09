@@ -112,9 +112,9 @@ class SettingsEditor extends Component
     {
         $this->authorize('viewAny', User::class);
 
-        // Legacy applyPerm filtering: admin/viewer can never perform a
+        // Legacy applyPerm filtering: admin/viewer/accountant can never perform a
         // transition; viewer is never notified.
-        $performerRoles = array_diff_key(User::ROLES, ['admin' => true, 'viewer' => true]);
+        $performerRoles = array_diff_key(User::ROLES, ['admin' => true, 'viewer' => true, 'accountant' => true]);
         $notifyRoles = array_diff_key(User::ROLES, ['viewer' => true]);
 
         return view('livewire.admin.settings-editor', [

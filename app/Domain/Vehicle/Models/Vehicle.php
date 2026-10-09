@@ -190,6 +190,16 @@ class Vehicle extends Model
         return (float) ($this->sale_price ?? 0) - (float) ($this->amount_paid ?? 0);
     }
 
+    public function getTotalCostAttribute(): float
+    {
+        return (float) ($this->cost ?? 0) + (float) ($this->duty ?? 0);
+    }
+
+    public function getProfitAttribute(): float
+    {
+        return (float) ($this->sale_price ?? 0) - $this->total_cost;
+    }
+
     public function stageValue(): string
     {
         return $this->stage instanceof VehicleStage ? $this->stage->value : (string) $this->stage;

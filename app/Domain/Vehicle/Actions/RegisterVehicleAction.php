@@ -20,6 +20,7 @@ class RegisterVehicleAction
             'model' => 'required|string|max:255',
             'vin' => 'required|string|max:255|unique:vehicles,vin',
             'fuel' => 'nullable|string|max:255',
+            'mod' => 'nullable|string|max:255',
             'purchased_at' => 'nullable|date',
             'supplier' => 'nullable|string|max:500',
             'cost' => 'nullable|numeric|min:0',

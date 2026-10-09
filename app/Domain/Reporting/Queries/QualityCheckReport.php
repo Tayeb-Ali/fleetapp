@@ -58,6 +58,15 @@ class QualityCheckReport implements ReportQuery
             if (in_array($stage, ['instock', 'sold'], true) && ($v['loc'] ?? '') === '') {
                 $issues[] = 'In stock without warehouse location';
             }
+            if (in_array($stage, ['sold', 'delivered'], true) && ((float) ($v['price'] ?? 0)) <= 0) {
+                $issues[] = 'Sold without sale price';
+            }
+            if (in_array($stage, ['sold', 'delivered'], true) && ($v['paid'] ?? '') === '') {
+                $issues[] = 'Sold without amount paid';
+            }
+            if ((float) ($v['paid'] ?? 0) > (float) ($v['price'] ?? 0) && ((float) ($v['price'] ?? 0)) > 0) {
+                $issues[] = 'Amount paid exceeds sale price';
+            }
 
             foreach ($issues as $issue) {
                 $rows[] = [$v['vin'] ?? '', $v['model'] ?? '', $this->stageLabel($stage), $issue];

@@ -7,5 +7,6 @@ return [
     'customs' => 'الجمارك والتخليص',
     'sales' => 'المبيعات',
     'warehouse' => 'المخزن',
+    'accountant' => 'المحاسب',
     'viewer' => 'مشاهدة فقط',
 ];

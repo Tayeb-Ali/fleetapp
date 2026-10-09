@@ -18,6 +18,7 @@ return [
         'customs' => 'الجمارك والتخليص',
         'sales' => 'المبيعات',
         'warehouse' => 'المستودع',
+        'accountant' => 'المحاسب',
         'viewer' => 'مشاهدة فقط',
     ],
     'transitions' => [

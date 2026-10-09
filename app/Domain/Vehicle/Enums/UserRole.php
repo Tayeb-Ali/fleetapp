@@ -14,6 +14,7 @@ enum UserRole: string
     case Customs = 'customs';
     case Sales = 'sales';
     case Warehouse = 'warehouse';
+    case Accountant = 'accountant';
     case Viewer = 'viewer';
 
     public function label(): string
