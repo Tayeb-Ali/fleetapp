@@ -1,0 +1,217 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Livewire\Admin;
+
+use App\Models\User;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Validation\Rule;
+use Livewire\Component;
+use Livewire\WithPagination;
+
+/** Admin user list with search, create/edit modal, active toggle, password reset. */
+class UserManager extends Component
+{
+    use AuthorizesRequests;
+    use WithPagination;
+
+    public string $search = '';
+
+    public bool $showModal = false;
+
+    public ?int $editingId = null;
+
+    public string $username = '';
+
+    public string $name = '';
+
+    public string $email = '';
+
+    public string $role = 'viewer';
+
+    public bool $active = true;
+
+    public string $password = '';
+
+    public bool $showPasswordModal = false;
+
+    public ?int $passwordUserId = null;
+
+    public string $newPassword = '';
+
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    /** @return array<string, mixed> */
+    protected function formRules(?int $ignoreId = null): array
+    {
+        return [
+            'username' => ['required', 'string', 'max:50', Rule::unique('users', 'username')->ignore($ignoreId)],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'role' => ['required', Rule::in(array_keys(User::ROLES))],
+            'active' => ['sometimes', 'boolean'],
+            'password' => $ignoreId
+                ? ['nullable', 'string', 'min:6']
+                : ['required', 'string', 'min:6'],
+        ];
+    }
+
+    public function create(): void
+    {
+        $this->authorize('create', User::class);
+        $this->resetForm();
+        $this->showModal = true;
+    }
+
+    public function edit(int $id): void
+    {
+        $target = User::findOrFail($id);
+        $this->authorize('update', $target);
+
+        $this->resetForm();
+        $this->editingId = $target->id;
+        $this->username = $target->username;
+        $this->name = $target->name;
+        $this->email = (string) ($target->email ?? '');
+        $this->role = $target->role;
+        $this->active = (bool) $target->active;
+        $this->showModal = true;
+    }
+
+    public function save(): void
+    {
+        $data = $this->validate($this->formRules($this->editingId));
+
+        if ($this->editingId) {
+            $target = User::findOrFail($this->editingId);
+            $this->authorize('update', $target);
+
+            // Legacy server.js:182 — cannot disable self or change own role.
+            if ($target->is(auth()->user()) && ($data['role'] !== 'admin' || ($data['active'] ?? true) !== true)) {
+                $this->addError('role', 'You cannot disable your account or change your role.');
+                $this->addError('active', 'You cannot disable your account or change your role.');
+
+                return;
+            }
+
+            $target->fill([
+                'username' => strtolower(trim($data['username'])),
+                'name' => trim($data['name']),
+                'email' => ($data['email'] ?? '') !== '' ? trim($data['email']) : null,
+                'role' => $data['role'],
+                'active' => (bool) ($data['active'] ?? $target->active),
+            ]);
+            if (($data['password'] ?? '') !== '') {
+                $target->password = $data['password'];
+            }
+            $target->save();
+
+            session()->flash('status', 'User updated.');
+        } else {
+            $this->authorize('create', User::class);
+
+            User::create([
+                'username' => strtolower(trim($data['username'])),
+                'name' => trim($data['name']),
+                'email' => ($data['email'] ?? '') !== '' ? trim($data['email']) : null,
+                'role' => $data['role'],
+                'active' => true,
+                'password' => $data['password'],
+            ]);
+
+            session()->flash('status', 'User created.');
+        }
+
+        $this->closeModal();
+    }
+
+    public function toggleActive(int $id): void
+    {
+        $target = User::findOrFail($id);
+
+        if ($target->is(auth()->user())) {
+            session()->flash('error', 'You cannot disable your own account.');
+
+            return;
+        }
+
+        $this->authorize('toggleActive', $target);
+        $target->active = ! $target->active;
+        $target->save();
+
+        session()->flash('status', $target->active ? 'User enabled.' : 'User disabled.');
+    }
+
+    public function openPasswordReset(int $id): void
+    {
+        $target = User::findOrFail($id);
+        $this->authorize('resetPassword', $target);
+
+        $this->passwordUserId = $target->id;
+        $this->newPassword = '';
+        $this->showPasswordModal = true;
+    }
+
+    public function resetPassword(): void
+    {
+        $target = User::findOrFail($this->passwordUserId);
+        $this->authorize('resetPassword', $target);
+
+        $this->validate(['newPassword' => ['required', 'string', 'min:6']]);
+
+        $target->password = $this->newPassword;
+        $target->save();
+
+        $this->showPasswordModal = false;
+        $this->passwordUserId = null;
+        $this->newPassword = '';
+
+        session()->flash('status', 'Password reset.');
+    }
+
+    public function closeModal(): void
+    {
+        $this->showModal = false;
+        $this->showPasswordModal = false;
+        $this->resetForm();
+        $this->resetValidation();
+    }
+
+    protected function resetForm(): void
+    {
+        $this->editingId = null;
+        $this->username = '';
+        $this->name = '';
+        $this->email = '';
+        $this->role = 'viewer';
+        $this->active = true;
+        $this->password = '';
+        $this->passwordUserId = null;
+        $this->newPassword = '';
+    }
+
+    public function render()
+    {
+        $this->authorize('viewAny', User::class);
+
+        $users = User::query()
+            ->when($this->search !== '', function ($query) {
+                $term = '%'.strtolower(trim($this->search)).'%';
+                $query->whereRaw('LOWER(username) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(name) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(COALESCE(email, "")) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(role) LIKE ?', [$term]);
+            })
+            ->orderBy('id')
+            ->paginate(12);
+
+        return view('livewire.admin.user-manager', [
+            'users' => $users,
+            'roles' => User::ROLES,
+        ]);
+    }
+}

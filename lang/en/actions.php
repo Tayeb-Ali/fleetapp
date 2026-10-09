@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'register' => 'Register new vehicle',
+    'ship' => 'Register shipment',
+    'arrive' => 'Confirm arrival at port',
+    'start_clearance' => 'Start customs clearance',
+    'complete_clearance' => 'Complete customs clearance',
+    'receive' => 'Receive into warehouse',
+    'sell' => 'Issue sale order',
+    'deliver' => 'Deliver to buyer',
+    'edit' => 'Update data',
+    'delete' => 'Delete',
+    'save' => 'Save',
+    'search' => 'Search: model, chassis, B/L, buyer…',
+    'cancel' => 'Cancel',
+    'close' => 'Close',
+    'login' => 'Sign in',
+    'logout' => 'Sign out',
+    'all' => 'All',
+    'view' => 'View',
+    'back' => 'Back',
+    'confirm_delete' => 'Delete this vehicle permanently?',
+    'required' => 'Field required',
+];

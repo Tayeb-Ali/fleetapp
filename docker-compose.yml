@@ -1,0 +1,127 @@
+services:
+  # PHP-FPM application (SQLite works out of the box, no db required)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fleetapp-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./storage:/var/www/html/storage
+      - sqlite-data:/var/www/html/database
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /var/www/html/database/database.sqlite
+      QUEUE_CONNECTION: database
+      CACHE_STORE: database
+      SESSION_DRIVER: database
+      REDIS_HOST: redis
+    depends_on:
+      - redis
+    networks:
+      - fleet
+
+  # Nginx front door -> fastcgi to app:9000
+  web:
+    image: nginx:1.27-alpine
+    container_name: fleetapp-web
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./public:/var/www/html/public:ro
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./storage/app/public:/var/www/html/storage/app/public:ro
+    depends_on:
+      - app
+    networks:
+      - fleet
+
+  # Queue worker (same build, runs queue:work)
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fleetapp-worker
+    restart: unless-stopped
+    command: ["php", "artisan", "queue:work", "--tries=3", "--sleep=3", "--timeout=90"]
+    volumes:
+      - ./storage:/var/www/html/storage
+      - sqlite-data:/var/www/html/database
+    environment:
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /var/www/html/database/database.sqlite
+      QUEUE_CONNECTION: database
+      REDIS_HOST: redis
+    depends_on:
+      - app
+      - redis
+    networks:
+      - fleet
+
+  # Scheduler (cron-style via `schedule:work`)
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fleetapp-scheduler
+    restart: unless-stopped
+    command: ["php", "artisan", "schedule:work"]
+    volumes:
+      - ./storage:/var/www/html/storage
+      - sqlite-data:/var/www/html/database
+    environment:
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /var/www/html/database/database.sqlite
+      QUEUE_CONNECTION: database
+    depends_on:
+      - app
+    networks:
+      - fleet
+
+  # Cache / optional queue backend (always on, app falls back to database driver by default)
+  redis:
+    image: redis:7-alpine
+    container_name: fleetapp-redis
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks:
+      - fleet
+
+  # Optional MySQL path (NOT required for default SQLite boot).
+  # Start with: docker compose --profile mysql up
+  db:
+    image: mysql:8.0
+    container_name: fleetapp-db
+    restart: unless-stopped
+    profiles: ["mysql"]
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_DATABASE: ${DB_DATABASE:-fleet}
+      MYSQL_USER: ${DB_USERNAME:-fleet}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - fleet
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  sqlite-data:
+  redis-data:
+  mysql-data:
+
+networks:
+  fleet:
+    driver: bridge
