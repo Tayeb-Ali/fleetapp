@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -23,30 +22,43 @@ if ($uri !== '/' && is_file($file = __DIR__.'/../public'.$uri)) {
     return;
 }
 
+// Ensure fallback APP_KEY exists so application never crashes on missing key
+if (! getenv('APP_KEY') && ! isset($_SERVER['APP_KEY']) && ! isset($_ENV['APP_KEY'])) {
+    $fallbackKey = 'base64:UUGl5arvZt/1FYKTC1nrKJzyjCtQ15m8aOvPAq5yBQI=';
+    putenv("APP_KEY={$fallbackKey}");
+    $_ENV['APP_KEY'] = $fallbackKey;
+    $_SERVER['APP_KEY'] = $fallbackKey;
+}
+
 require __DIR__.'/../vendor/autoload.php';
 
 /** @var Application $app */
 $app = require_once __DIR__.'/../bootstrap/app.php';
 
 /*
- * Boot the framework (loads .env/config/facades/providers) so runtime
- * provisioning can inspect configuration before the HTTP kernel handles the
- * request. Provisioning is idempotent and cheap.
+ * Register a booting callback that provisions the serverless runtime before
+ * the first request is handled. This runs after all config/providers have
+ * loaded — no Console Kernel needed (removed in Laravel 13).
  */
-$app->make(Kernel::class)->bootstrap();
-
-/*
- * Vercel's filesystem is read-only outside /tmp. Provision writable runtime
- * paths and, when no external database is configured, an ephemeral SQLite
- * database seeded with a usable admin account on the first request of each
- * function instance.
- */
-provision_runtime($app);
+$app->booting(function (Application $app): void {
+    provision_runtime($app);
+});
 
 $app->handleRequest(Request::capture());
 
+// ---------------------------------------------------------------------------
+// Serverless provisioning helpers
+// ---------------------------------------------------------------------------
+
 function provision_runtime(Application $app): void
 {
+    // Ensure writable temporary directories exist
+    foreach (['/tmp/views', '/tmp/fonts', '/tmp/cache'] as $tmpDir) {
+        if (! is_dir($tmpDir)) {
+            @mkdir($tmpDir, 0755, true);
+        }
+    }
+
     prepare_font_cache($app);
 
     if (($app['config']->get('database.default') ?? 'sqlite') !== 'sqlite') {
@@ -80,16 +92,16 @@ function provision_runtime(Application $app): void
 
             @touch($database);
         }
-    }
 
-    try {
-        Artisan::call('migrate', ['--force' => true]);
+        try {
+            Artisan::call('migrate', ['--force' => true]);
 
-        if (DB::table('users')->count() === 0) {
-            Artisan::call('db:seed', ['--force' => true]);
+            if (DB::table('users')->count() === 0) {
+                Artisan::call('db:seed', ['--force' => true]);
+            }
+        } catch (Throwable $e) {
+            report($e);
         }
-    } catch (Throwable $e) {
-        report($e);
     }
 }
 
