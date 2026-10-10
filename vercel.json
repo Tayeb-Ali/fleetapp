@@ -1,0 +1,37 @@
+{
+    "$schema": "https://openapi.vercel.sh/vercel.json",
+    "framework": null,
+    "builds": [
+        {
+            "src": "api/index.php",
+            "use": "vercel-php@0.9.0"
+        }
+    ],
+    "routes": [
+        { "src": "/(.*)", "dest": "/api/index.php" }
+    ],
+    "env": {
+        "APP_ENV": "production",
+        "APP_DEBUG": "false",
+        "APP_LOCALE": "ar",
+        "APP_FALLBACK_LOCALE": "en",
+        "APP_FAKER_LOCALE": "ar_SA",
+        "LOG_CHANNEL": "stderr",
+        "LOG_LEVEL": "error",
+        "SESSION_DRIVER": "cookie",
+        "CACHE_STORE": "array",
+        "QUEUE_CONNECTION": "sync",
+        "DB_CONNECTION": "sqlite",
+        "DB_DATABASE": "/tmp/database.sqlite",
+        "FILESYSTEM_DISK": "local",
+        "ASSET_URL": "/",
+        "DOMPDF_FONT_DIR": "/tmp/fonts",
+        "DOMPDF_FONT_CACHE": "/tmp/fonts",
+        "VIEW_COMPILED_PATH": "/tmp/views",
+        "APP_CONFIG_CACHE": "/tmp/config.php",
+        "APP_EVENTS_CACHE": "/tmp/events.php",
+        "APP_PACKAGES_CACHE": "/tmp/packages.php",
+        "APP_ROUTES_CACHE": "/tmp/routes.php",
+        "APP_SERVICES_CACHE": "/tmp/services.php"
+    }
+}

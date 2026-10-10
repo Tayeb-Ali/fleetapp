@@ -31,3 +31,7 @@ Homestead.yaml
 Thumbs.db
 
 /docs/adr
+.vercel
+.env*
+
+/.playwright-mcp
