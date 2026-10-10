@@ -6,11 +6,13 @@ namespace App\Domain\Reporting\Queries;
 
 use App\Domain\Reporting\Contracts\ReportQuery;
 use App\Domain\Reporting\Queries\Concerns\FetchesVehicles;
+use App\Domain\Reporting\Queries\Concerns\LocalizesReport;
 
 /** Legacy REP.available — instock only. */
 class AvailableReport implements ReportQuery
 {
     use FetchesVehicles;
+    use LocalizesReport;
 
     public function key(): string
     {
@@ -19,12 +21,20 @@ class AvailableReport implements ReportQuery
 
     public function titleKey(): string
     {
-        return 'Vehicles available for sale';
+        return 'reports.titles.available';
     }
 
     public function columns(): array
     {
-        return ['Brand', 'Model', 'Chassis No. (VIN)', 'Fuel / Engine', 'Warehouse location', 'Warehouse entry date', 'Days in warehouse'];
+        return [
+            $this->field('brand'),
+            $this->field('model'),
+            $this->field('vin'),
+            $this->field('fuel'),
+            $this->field('loc'),
+            $this->field('in_date'),
+            $this->column('days_in_warehouse'),
+        ];
     }
 
     public function rows(): array
@@ -36,7 +46,7 @@ class AvailableReport implements ReportQuery
                 $v['vin'] ?? '',
                 $v['fuel'] ?? '',
                 $v['loc'] ?? '',
-                $v['in_date'] ?? '',
+                $this->formatDate($v['in_date'] ?? ''),
                 $this->daysSince($v['in_date'] ?? ($v['arr'] ?? '')),
             ],
             array_filter($this->vehicles(), fn ($v) => ($v['stage'] ?? null) === 'instock')

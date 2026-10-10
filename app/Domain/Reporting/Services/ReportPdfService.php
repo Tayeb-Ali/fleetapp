@@ -23,10 +23,10 @@ class ReportPdfService
         $orientation = count($columns) > 8 ? 'landscape' : 'portrait';
 
         return Pdf::loadView('reports.pdf', [
-            'title' => $query->titleKey(),
+            'title' => $query->title(),
             'columns' => $columns,
             'rows' => $query->rows(),
-            'generated' => now()->format('Y-m-d H:i').' UTC',
+            'generated' => now()->translatedFormat('d M Y H:i').' UTC',
         ])
             ->setPaper('a4', $orientation)
             ->setOption('defaultFont', 'DejaVu Sans')

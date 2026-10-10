@@ -6,11 +6,13 @@ namespace App\Domain\Reporting\Queries;
 
 use App\Domain\Reporting\Contracts\ReportQuery;
 use App\Domain\Reporting\Queries\Concerns\FetchesVehicles;
+use App\Domain\Reporting\Queries\Concerns\LocalizesReport;
 
 /** Legacy REP.quality (lines 81-85) — data quality check. */
 class QualityCheckReport implements ReportQuery
 {
     use FetchesVehicles;
+    use LocalizesReport;
 
     public function key(): string
     {
@@ -19,12 +21,12 @@ class QualityCheckReport implements ReportQuery
 
     public function titleKey(): string
     {
-        return 'Data quality check';
+        return 'reports.titles.quality';
     }
 
     public function columns(): array
     {
-        return ['Chassis No. (VIN)', 'Model', 'Stage', 'Issue'];
+        return [$this->field('vin'), $this->field('model'), $this->field('stage'), $this->column('issue')];
     }
 
     public function rows(): array
@@ -38,38 +40,38 @@ class QualityCheckReport implements ReportQuery
             $stage = $v['stage'] ?? '';
 
             if (($v['ship'] ?? '') !== '' && $v['ship'] > $today) {
-                $issues[] = 'Shipping date is in the future';
+                $issues[] = 'shipping_future';
             }
             if (($v['arr'] ?? '') !== '' && $v['arr'] > $today && ! in_array($stage, ['purchased', 'shipped'], true)) {
-                $issues[] = 'Arrival date is in the future but the vehicle is past the shipping stage';
+                $issues[] = 'arrival_future';
             }
             if (($v['ship'] ?? '') !== '' && ($v['arr'] ?? '') !== '' && $v['arr'] < $v['ship']) {
-                $issues[] = 'Arrival date is before shipping date';
+                $issues[] = 'arrival_before_shipping';
             }
             if (in_array($stage, $pastShipping, true) && ($v['bl'] ?? '') === '') {
-                $issues[] = 'Missing Bill of Lading (B/L) number';
+                $issues[] = 'missing_bl';
             }
             if (in_array($stage, ['sold', 'delivered'], true) && ($v['client'] ?? '') === '') {
-                $issues[] = 'Sold without buyer name';
+                $issues[] = 'sold_without_buyer';
             }
             if ($stage === 'delivered' && (($v['recv'] ?? '') === '' || ($v['del_date'] ?? '') === '')) {
-                $issues[] = 'Delivered without receiver name or delivery date';
+                $issues[] = 'delivered_incomplete';
             }
             if (in_array($stage, ['instock', 'sold'], true) && ($v['loc'] ?? '') === '') {
-                $issues[] = 'In stock without warehouse location';
+                $issues[] = 'instock_without_location';
             }
             if (in_array($stage, ['sold', 'delivered'], true) && ((float) ($v['price'] ?? 0)) <= 0) {
-                $issues[] = 'Sold without sale price';
+                $issues[] = 'sold_without_price';
             }
             if (in_array($stage, ['sold', 'delivered'], true) && ($v['paid'] ?? '') === '') {
-                $issues[] = 'Sold without amount paid';
+                $issues[] = 'sold_without_paid';
             }
             if ((float) ($v['paid'] ?? 0) > (float) ($v['price'] ?? 0) && ((float) ($v['price'] ?? 0)) > 0) {
-                $issues[] = 'Amount paid exceeds sale price';
+                $issues[] = 'overpaid';
             }
 
-            foreach ($issues as $issue) {
-                $rows[] = [$v['vin'] ?? '', $v['model'] ?? '', $this->stageLabel($stage), $issue];
+            foreach ($issues as $code) {
+                $rows[] = [$v['vin'] ?? '', $v['model'] ?? '', $this->stageLabel($stage), $this->issueLabel($code)];
             }
         }
 

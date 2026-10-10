@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Reporting;
 
+use App\Domain\Vehicle\Models\Vehicle;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -83,5 +84,49 @@ class ReportPagesTest extends TestCase
         $this->actingAs($user)
             ->get(route('reports.export', ['key' => 'summary', 'format' => 'csv']))
             ->assertStatus(400);
+    }
+
+    public function test_index_shows_arabic_titles_by_default(): void
+    {
+        $user = $this->makeUser();
+
+        $response = $this->actingAs($user)->get('/reports');
+
+        $response->assertOk();
+        $response->assertSee('ملخص مراحل المركبات');
+        $response->assertSee('المبيعات حسب المشتري');
+    }
+
+    public function test_summary_report_localizes_columns_and_dates(): void
+    {
+        $user = $this->makeUser();
+        Vehicle::factory()->create([
+            'vin' => 'VIN-L1',
+            'stage' => 'instock',
+            'warehouse_in_at' => '2026-01-02',
+        ]);
+
+        $response = $this->actingAs($user)->get('/reports/summary');
+
+        $response->assertOk();
+        $response->assertSee('المرحلة');
+        $response->assertSee('العدد');
+        $response->assertSee('في المخزن - متاح للبيع');
+    }
+
+    public function test_stock_report_renders_localized_dates_in_english(): void
+    {
+        $user = $this->makeUser();
+        Vehicle::factory()->create([
+            'vin' => 'VIN-L2',
+            'stage' => 'instock',
+            'warehouse_in_at' => '2026-10-05',
+        ]);
+
+        $response = $this->actingAs($user)->withSession(['locale' => 'en'])->get('/reports/stock');
+
+        $response->assertOk();
+        $response->assertSee('Warehouse entry date');
+        $response->assertSee('5 Oct 2026');
     }
 }

@@ -6,11 +6,13 @@ namespace App\Domain\Reporting\Queries;
 
 use App\Domain\Reporting\Contracts\ReportQuery;
 use App\Domain\Reporting\Queries\Concerns\FetchesVehicles;
+use App\Domain\Reporting\Queries\Concerns\LocalizesReport;
 
 /** Legacy REP.sales — grouped by buyer_name (client) with totals. */
 class SalesByBuyerReport implements ReportQuery
 {
     use FetchesVehicles;
+    use LocalizesReport;
 
     public function key(): string
     {
@@ -19,12 +21,19 @@ class SalesByBuyerReport implements ReportQuery
 
     public function titleKey(): string
     {
-        return 'Sales by buyer';
+        return 'reports.titles.sales';
     }
 
     public function columns(): array
     {
-        return ['Buyer / Organization', 'Vehicle count', 'Total sale price', 'Total paid', 'Delivered', 'awaiting delivery'];
+        return [
+            $this->field('client'),
+            $this->column('vehicle_count'),
+            $this->column('total_sale_price'),
+            $this->column('total_paid'),
+            $this->column('delivered'),
+            $this->column('awaiting_delivery'),
+        ];
     }
 
     public function rows(): array
@@ -49,8 +58,16 @@ class SalesByBuyerReport implements ReportQuery
             ];
         }
 
+        // Sort by vehicle count desc before formatting money to strings.
         usort($rows, fn ($a, $b) => $b[1] <=> $a[1]);
 
-        return $rows;
+        return array_map(fn ($row) => [
+            $row[0],
+            $row[1],
+            $this->formatMoney($row[2]),
+            $this->formatMoney($row[3]),
+            $row[4],
+            $row[5],
+        ], $rows);
     }
 }

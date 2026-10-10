@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="auto">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -11,19 +11,20 @@
   .meta { color: #666; font-size: 8px; margin-bottom: 12px; }
   table { width: 100%; border-collapse: collapse; }
   th { background: #1f3a8a; color: #fff; padding: 5px 4px; text-align: start; font-size: 8px; }
-  td { padding: 4px; border-bottom: 1px solid #ddd; font-size: 8px; word-wrap: break-word; }
+  td { padding: 4px; border-bottom: 1px solid #ddd; font-size: 8px; }
   tr:nth-child(even) td { background: #f2f4f8; }
+  .num { text-align: start; white-space: nowrap; }
   .footer { margin-top: 12px; color: #888; font-size: 7px; }
   .empty { padding: 16px; color: #666; }
 </style>
 </head>
 <body>
 <h1>{{ $title ?? __('reports.report_fallback') }}</h1>
-<div class="meta">{{ __('reports.generated') }} {{ $generated ?? now()->format('Y-m-d H:i').' UTC' }} | {{ count($rows ?? []) }} {{ __('reports.records') }}</div>
+<div class="meta">{{ __('reports.generated') }} {{ $generated ?? now()->translatedFormat('d M Y H:i').' UTC' }} | {{ count($rows ?? []) }} {{ __('reports.records') }}</div>
 @if(empty($rows))
   <div class="empty">{{ __('app.no_results') }}</div>
 @else
-<table dir="auto">
+<table>
   <thead>
     <tr>
       @foreach($columns as $col)
@@ -35,7 +36,7 @@
     @foreach($rows as $row)
       <tr>
         @foreach((array) $row as $cell)
-          <td>{{ $cell }}</td>
+          <td class="num">{{ $cell === '' || $cell === null ? '—' : $cell }}</td>
         @endforeach
       </tr>
     @endforeach

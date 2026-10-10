@@ -6,11 +6,13 @@ namespace App\Domain\Reporting\Queries;
 
 use App\Domain\Reporting\Contracts\ReportQuery;
 use App\Domain\Reporting\Queries\Concerns\FetchesVehicles;
+use App\Domain\Reporting\Queries\Concerns\LocalizesReport;
 
 /** Profit per vehicle: sale_price - cost - duty. */
 class ProfitReport implements ReportQuery
 {
     use FetchesVehicles;
+    use LocalizesReport;
 
     public function key(): string
     {
@@ -19,12 +21,21 @@ class ProfitReport implements ReportQuery
 
     public function titleKey(): string
     {
-        return 'Profit by vehicle';
+        return 'reports.titles.profit';
     }
 
     public function columns(): array
     {
-        return ['Chassis No. (VIN)', 'Model', 'Buyer / Organization', 'Purchase price', 'Customs duty', 'Total cost', 'Sale price', 'Profit'];
+        return [
+            $this->field('vin'),
+            $this->field('model'),
+            $this->field('client'),
+            $this->field('cost'),
+            $this->field('duty'),
+            $this->column('total_cost'),
+            $this->field('price'),
+            $this->column('profit'),
+        ];
     }
 
     public function rows(): array
@@ -48,8 +59,18 @@ class ProfitReport implements ReportQuery
             ];
         }
 
+        // Sort desc on numeric profit before formatting money to strings.
         usort($rows, fn ($a, $b) => ((float) ($b[7] === '' ? 0 : $b[7])) <=> ((float) ($a[7] === '' ? 0 : $a[7])));
 
-        return $rows;
+        return array_map(fn ($row) => [
+            $row[0],
+            $row[1],
+            $row[2],
+            $this->formatMoney($row[3]),
+            $this->formatMoney($row[4]),
+            $this->formatMoney($row[5]),
+            $this->formatMoney($row[6]),
+            $this->formatMoney($row[7]),
+        ], $rows);
     }
 }

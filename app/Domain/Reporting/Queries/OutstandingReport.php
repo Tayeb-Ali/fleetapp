@@ -6,11 +6,13 @@ namespace App\Domain\Reporting\Queries;
 
 use App\Domain\Reporting\Contracts\ReportQuery;
 use App\Domain\Reporting\Queries\Concerns\FetchesVehicles;
+use App\Domain\Reporting\Queries\Concerns\LocalizesReport;
 
 /** Outstanding balances: sale_price - amount_paid > 0. */
 class OutstandingReport implements ReportQuery
 {
     use FetchesVehicles;
+    use LocalizesReport;
 
     public function key(): string
     {
@@ -19,12 +21,20 @@ class OutstandingReport implements ReportQuery
 
     public function titleKey(): string
     {
-        return 'Outstanding balances';
+        return 'reports.titles.outstanding';
     }
 
     public function columns(): array
     {
-        return ['Chassis No. (VIN)', 'Buyer / Organization', 'Buyer phone', 'Sale order no.', 'Sale price', 'Amount paid', 'Balance due'];
+        return [
+            $this->field('vin'),
+            $this->field('client'),
+            $this->field('phone'),
+            $this->field('ord_no'),
+            $this->field('price'),
+            $this->field('paid'),
+            $this->column('balance_due'),
+        ];
     }
 
     public function rows(): array
@@ -50,8 +60,17 @@ class OutstandingReport implements ReportQuery
             ];
         }
 
+        // Sort desc on numeric balance before formatting money to strings.
         usort($rows, fn ($a, $b) => $b[6] <=> $a[6]);
 
-        return $rows;
+        return array_map(fn ($row) => [
+            $row[0],
+            $row[1],
+            $row[2],
+            $row[3],
+            $this->formatMoney($row[4]),
+            $this->formatMoney($row[5]),
+            $this->formatMoney($row[6]),
+        ], $rows);
     }
 }

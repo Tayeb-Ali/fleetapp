@@ -6,11 +6,13 @@ namespace App\Domain\Reporting\Queries;
 
 use App\Domain\Reporting\Contracts\ReportQuery;
 use App\Domain\Reporting\Queries\Concerns\FetchesVehicles;
+use App\Domain\Reporting\Queries\Concerns\LocalizesReport;
 
 /** Legacy REP.customs — arrived/clearing/cleared or customs_no present. */
 class CustomsReport implements ReportQuery
 {
     use FetchesVehicles;
+    use LocalizesReport;
 
     public function key(): string
     {
@@ -19,12 +21,20 @@ class CustomsReport implements ReportQuery
 
     public function titleKey(): string
     {
-        return 'Customs & Clearance';
+        return 'reports.titles.customs';
     }
 
     public function columns(): array
     {
-        return ['Model', 'Chassis No. (VIN)', 'Bill of Lading No. (B/L)', 'Stage', 'Customs declaration no.', 'Clearance date', 'Customs duty'];
+        return [
+            $this->field('model'),
+            $this->field('vin'),
+            $this->field('bl'),
+            $this->field('stage'),
+            $this->field('cust_no'),
+            $this->field('cust_date'),
+            $this->field('duty'),
+        ];
     }
 
     public function rows(): array
@@ -36,8 +46,8 @@ class CustomsReport implements ReportQuery
                 $v['bl'] ?? '',
                 $this->stageLabel($v['stage'] ?? null),
                 $v['cust_no'] ?? '',
-                $v['cust_date'] ?? '',
-                $this->num($v, 'duty'),
+                $this->formatDate($v['cust_date'] ?? ''),
+                $this->formatMoney($v['duty'] ?? ''),
             ],
             array_filter(
                 $this->vehicles(),

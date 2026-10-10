@@ -18,26 +18,6 @@ use Illuminate\Support\Facades\Schema;
  */
 trait FetchesVehicles
 {
-    /** Stage machine value => label (legacy STAGES). */
-    protected function stages(): array
-    {
-        return [
-            'purchased' => 'Purchased',
-            'shipped' => 'In transit',
-            'arrived' => 'Arrived at port',
-            'clearing' => 'Clearing customs',
-            'cleared' => 'Customs cleared',
-            'instock' => 'In warehouse - available for sale',
-            'sold' => 'Sold - awaiting delivery',
-            'delivered' => 'Delivered',
-        ];
-    }
-
-    protected function stageLabel(?string $stage): string
-    {
-        return $this->stages()[$stage ?? ''] ?? (string) ($stage ?? '');
-    }
-
     /** All vehicle rows as plain arrays. */
     protected function vehicles(): array
     {
