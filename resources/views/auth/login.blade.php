@@ -28,6 +28,7 @@
         <main class="flex flex-1 items-center justify-center px-4 pb-12">
             <livewire:auth.login />
         </main>
+        <x-layouts.footer />
     </div>
     @livewireScripts
 </body>

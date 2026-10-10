@@ -25,16 +25,27 @@
         }
     </script>
 </head>
-<body class="bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen font-sans">
-<header class="mx-auto w-full max-w-5xl px-4 pt-4">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div class="min-w-0">
-            <h1 class="truncate text-lg font-bold">{{ __('app.name') }}</h1>
-            @auth
-                <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ auth()->user()->name }} · {{ __('roles.'.auth()->user()->role) }}</p>
-            @endauth
+<body class="flex min-h-screen flex-col bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans">
+<header class="lg:sticky lg:top-0 lg:z-40 lg:border-b lg:border-slate-200 lg:bg-white/80 lg:backdrop-blur dark:lg:border-slate-800 dark:lg:bg-slate-950/80">
+    <div class="mx-auto w-full max-w-5xl px-4 pt-4 lg:max-w-7xl lg:py-0">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:h-16 lg:gap-4">
+        <div class="flex min-w-0 items-center gap-2.5">
+            <span class="hidden h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-600 text-white lg:grid" aria-hidden="true">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h10v8H3z"/><path d="M13 10h4l3 3v2h-7z"/><circle cx="7" cy="17" r="1.6"/><circle cx="17" cy="17" r="1.6"/></svg>
+            </span>
+            <div class="min-w-0">
+                <h1 class="truncate text-lg font-bold">{{ __('app.name') }}</h1>
+                @auth
+                    <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ auth()->user()->name }} · {{ __('roles.'.auth()->user()->role) }}</p>
+                @endauth
+            </div>
         </div>
-        <div class="flex flex-wrap items-center gap-2 sm:shrink-0">
+        @auth
+            <nav class="hidden items-center gap-1 text-sm font-semibold lg:flex" aria-label="{{ __('app.dashboard') }}">
+                <x-layouts.nav-links variant="desktop" />
+            </nav>
+        @endauth
+        <div class="flex flex-wrap items-center gap-2 sm:shrink-0 lg:shrink-0">
             <x-language-switch />
             <button type="button" onclick="toggleTheme()" class="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-slate-300 text-slate-500 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800" title="{{ __('app.dark_mode') }}" aria-label="{{ __('app.dark_mode') }}" aria-pressed="false">
                 <svg class="h-4 w-4 dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
@@ -50,33 +61,17 @@
                 </form>
             @endauth
         </div>
+        </div>
     </div>
 </header>
 
 @auth
-<nav class="max-w-5xl mx-auto px-4 py-2 flex gap-1 overflow-x-auto text-sm font-semibold">
-    @php
-        $tabs = [
-            ['dashboard', 'nav.overview', '/'],
-            ['vehicles.index', 'nav.vehicles', '/vehicles'],
-            ['reports.index', 'nav.reports', '/reports'],
-            ['notifications.index', 'nav.notifications', '/notifications'],
-            ['users.index', 'nav.users', '/users'],
-            ['audit.index', 'nav.audit', '/audit'],
-            ['settings.index', 'nav.settings', '/settings'],
-        ];
-    @endphp
-    @foreach ($tabs as [$route, $label, $fallback])
-        @if (Route::has($route))
-            <a href="{{ route($route) }}" class="px-3 py-2 rounded-lg whitespace-nowrap {{ request()->routeIs($route.'*') ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow' : 'text-slate-500 dark:text-slate-400' }}">{{ __($label) }}</a>
-        @else
-            <a href="{{ $fallback }}" class="px-3 py-2 rounded-lg whitespace-nowrap text-slate-500 dark:text-slate-400">{{ __($label) }}</a>
-        @endif
-    @endforeach
+<nav class="mx-auto flex w-full max-w-5xl gap-1 overflow-x-auto px-4 py-2 text-sm font-semibold lg:hidden">
+    <x-layouts.nav-links variant="mobile" />
 </nav>
 @endauth
 
-<main class="max-w-5xl mx-auto px-4 pb-16">
+<main class="mx-auto w-full max-w-5xl flex-1 px-4 pb-16 lg:max-w-7xl">
     @if (session('status'))
         <div class="my-3 p-3 rounded-xl bg-emerald-100 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-100 text-sm">{{ session('status') }}</div>
     @endif
@@ -85,6 +80,8 @@
     @endif
     {{ $slot }}
 </main>
+
+<x-layouts.footer />
 
 <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-black/80 text-white text-sm px-4 py-2 rounded-full hidden z-50"></div>
 <script>

@@ -15,4 +15,6 @@ return [
     'language' => 'اللغة',
     'dark_mode' => 'الوضع الداكن',
     'light_mode' => 'الوضع الفاتح',
+    'all_rights_reserved' => 'جميع الحقوق محفوظة',
+    'developed_by' => 'طُوّر بواسطة',
 ];

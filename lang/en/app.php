@@ -15,4 +15,6 @@ return [
     'language' => 'Language',
     'dark_mode' => 'Dark mode',
     'light_mode' => 'Light mode',
+    'all_rights_reserved' => 'All rights reserved',
+    'developed_by' => 'Developed by',
 ];
