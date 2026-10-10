@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title>Sale Order - {{ $vehicle['ord_no'] ?? $vehicle['vin'] ?? '' }}</title>
+<title>{{ __('documents.sale_order') }} - {{ $vehicle['ord_no'] ?? $vehicle['vin'] ?? '' }}</title>
 <style>
   body { font-family: 'DejaVu Sans', sans-serif; font-size: 11px; color: #111; margin: 40px; }
   .banner { background: #1f3a8a; color: #fff; padding: 18px 24px; margin: -40px -40px 20px -40px; }
@@ -11,14 +11,14 @@
   .banner .co { font-size: 16px; font-weight: bold; }
   .row { display: table; width: 100%; margin-bottom: 6px; }
   .row > div { display: table-cell; }
-  .right { text-align: right; }
+  .end { text-align: end; }
   h2 { font-size: 11px; color: #1f3a8a; text-transform: uppercase; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
   table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
   td { padding: 4px 0; vertical-align: top; }
   td.k { color: #666; width: 170px; }
   td.v { font-weight: bold; }
   .sigs { margin-top: 60px; display: table; width: 100%; }
-  .sig { display: table-cell; width: 50%; padding-right: 40px; }
+  .sig { display: table-cell; width: 50%; padding-inline-end: 40px; }
   .line { border-top: 1px solid #000; margin-top: 60px; padding-top: 4px; color: #666; font-size: 10px; }
   .footer { margin-top: 40px; color: #888; font-size: 8px; }
 </style>
@@ -30,35 +30,35 @@
 @endphp
 <div class="banner">
   <div class="co">{{ $company ?? config('app.name', 'Fleet Tracker') }}</div>
-  <h1>Sale Order</h1>
+  <h1>{{ __('documents.sale_order') }}</h1>
 </div>
 <div class="row">
-  <div><strong>Order No.:</strong> {{ $vehicle['ord_no'] ?? '-' }}</div>
-  <div class="right"><strong>Date:</strong> {{ $vehicle['sale_date'] ?? substr((string) ($vehicle['updated'] ?? date('Y-m-d')), 0, 10) }}</div>
+  <div><strong>{{ __('documents.order_no') }}:</strong> <span dir="ltr">{{ $vehicle['ord_no'] ?? '-' }}</span></div>
+  <div class="end"><strong>{{ __('documents.date') }}:</strong> <span dir="ltr">{{ $vehicle['sale_date'] ?? substr((string) ($vehicle['updated'] ?? date('Y-m-d')), 0, 10) }}</span></div>
 </div>
-<h2>Buyer</h2>
+<h2>{{ __('documents.buyer') }}</h2>
 <table dir="auto">
-  <tr><td class="k">Buyer / client</td><td class="v">{{ $vehicle['client'] ?? '-' }}</td></tr>
-  <tr><td class="k">Phone</td><td class="v">{{ $vehicle['phone'] ?? '-' }}</td></tr>
+  <tr><td class="k">{{ __('vehicles.client') }}</td><td class="v">{{ $vehicle['client'] ?? '-' }}</td></tr>
+  <tr><td class="k">{{ __('vehicles.phone') }}</td><td class="v"><span dir="ltr">{{ $vehicle['phone'] ?? '-' }}</span></td></tr>
 </table>
-<h2>Vehicle</h2>
+<h2>{{ __('documents.vehicle') }}</h2>
 <table dir="auto">
-  <tr><td class="k">Brand / model</td><td class="v">{{ trim(($vehicle['brand'] ?? '').' '.($vehicle['model'] ?? '')) ?: '-' }}</td></tr>
-  <tr><td class="k">Chassis No. (VIN)</td><td class="v">{{ $vehicle['vin'] ?? '-' }}</td></tr>
-  <tr><td class="k">Fuel / engine</td><td class="v">{{ $vehicle['fuel'] ?? '-' }}</td></tr>
-  <tr><td class="k">Bill of Lading (B/L)</td><td class="v">{{ $vehicle['bl'] ?? '-' }}</td></tr>
-  <tr><td class="k">Warehouse location</td><td class="v">{{ $vehicle['loc'] ?? '-' }}</td></tr>
+  <tr><td class="k">{{ __('vehicles.brand') }} / {{ __('vehicles.model') }}</td><td class="v">{{ trim(($vehicle['brand'] ?? '').' '.($vehicle['model'] ?? '')) ?: '-' }}</td></tr>
+  <tr><td class="k">{{ __('vehicles.vin') }}</td><td class="v"><span dir="ltr">{{ $vehicle['vin'] ?? '-' }}</span></td></tr>
+  <tr><td class="k">{{ __('vehicles.fuel') }}</td><td class="v">{{ $vehicle['fuel'] ?? '-' }}</td></tr>
+  <tr><td class="k">{{ __('vehicles.bl') }}</td><td class="v"><span dir="ltr">{{ $vehicle['bl'] ?? '-' }}</span></td></tr>
+  <tr><td class="k">{{ __('vehicles.loc') }}</td><td class="v">{{ $vehicle['loc'] ?? '-' }}</td></tr>
 </table>
-<h2>Payment</h2>
+<h2>{{ __('documents.payment') }}</h2>
 <table>
-  <tr><td class="k">Sale price</td><td class="v">{{ $fmt($vehicle['price'] ?? 0) }}</td></tr>
-  <tr><td class="k">Amount paid</td><td class="v">{{ $fmt($vehicle['paid'] ?? 0) }}</td></tr>
-  <tr><td class="k">Balance due</td><td class="v">{{ $fmt($balance) }}</td></tr>
+  <tr><td class="k">{{ __('vehicles.price') }}</td><td class="v"><span dir="ltr">{{ $fmt($vehicle['price'] ?? 0) }}</span></td></tr>
+  <tr><td class="k">{{ __('vehicles.paid') }}</td><td class="v"><span dir="ltr">{{ $fmt($vehicle['paid'] ?? 0) }}</span></td></tr>
+  <tr><td class="k">{{ __('documents.balance_due') }}</td><td class="v"><span dir="ltr">{{ $fmt($balance) }}</span></td></tr>
 </table>
 <div class="sigs">
-  <div class="sig"><div class="line">Prepared by (Sales)<br>Name / date:</div></div>
-  <div class="sig"><div class="line">Buyer acceptance<br>Name / date:</div></div>
+  <div class="sig"><div class="line">{{ __('documents.prepared_by') }}<br>{{ __('documents.name_date') }}</div></div>
+  <div class="sig"><div class="line">{{ __('documents.buyer_acceptance') }}<br>{{ __('documents.name_date') }}</div></div>
 </div>
-<div class="footer">{{ $company ?? config('app.name', 'Fleet Tracker') }} - generated {{ date('Y-m-d H:i') }} UTC</div>
+<div class="footer">{{ $company ?? config('app.name', 'Fleet Tracker') }} - {{ __('documents.generated') }} {{ date('Y-m-d H:i') }} UTC</div>
 </body>
 </html>

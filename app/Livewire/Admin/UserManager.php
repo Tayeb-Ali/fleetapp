@@ -92,8 +92,8 @@ class UserManager extends Component
 
             // Legacy server.js:182 — cannot disable self or change own role.
             if ($target->is(auth()->user()) && ($data['role'] !== 'admin' || ($data['active'] ?? true) !== true)) {
-                $this->addError('role', 'You cannot disable your account or change your role.');
-                $this->addError('active', 'You cannot disable your account or change your role.');
+                $this->addError('role', __('users.cannot_change_self'));
+                $this->addError('active', __('users.cannot_change_self'));
 
                 return;
             }
@@ -110,7 +110,7 @@ class UserManager extends Component
             }
             $target->save();
 
-            session()->flash('status', 'User updated.');
+            session()->flash('status', __('users.updated'));
         } else {
             $this->authorize('create', User::class);
 
@@ -123,7 +123,7 @@ class UserManager extends Component
                 'password' => $data['password'],
             ]);
 
-            session()->flash('status', 'User created.');
+            session()->flash('status', __('users.created'));
         }
 
         $this->closeModal();
@@ -134,7 +134,7 @@ class UserManager extends Component
         $target = User::findOrFail($id);
 
         if ($target->is(auth()->user())) {
-            session()->flash('error', 'You cannot disable your own account.');
+            session()->flash('error', __('users.cannot_disable_self'));
 
             return;
         }
@@ -143,7 +143,7 @@ class UserManager extends Component
         $target->active = ! $target->active;
         $target->save();
 
-        session()->flash('status', $target->active ? 'User enabled.' : 'User disabled.');
+        session()->flash('status', $target->active ? __('users.enabled') : __('users.disabled_flash'));
     }
 
     public function openPasswordReset(int $id): void
@@ -170,7 +170,7 @@ class UserManager extends Component
         $this->passwordUserId = null;
         $this->newPassword = '';
 
-        session()->flash('status', 'Password reset.');
+        session()->flash('status', __('users.password_reset_done'));
     }
 
     public function closeModal(): void

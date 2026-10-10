@@ -101,7 +101,7 @@ class VehicleShow extends Component
     public function render()
     {
         $vehicle = $this->vehicle();
-        abort_if(! $vehicle, 404, 'Vehicle not found');
+        abort_if(! $vehicle, 404, __('vehicles.not_found'));
 
         $transitions = VehicleMeta::transitionsFor((string) ($vehicle['stage'] ?? ''));
         $fields = VehicleMeta::fields();

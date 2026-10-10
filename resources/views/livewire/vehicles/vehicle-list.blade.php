@@ -13,7 +13,7 @@
         @endforeach
     </div>
 
-    <p class="text-xs text-slate-500 my-2">{{ $vehicles->total() }} {{ __('nav.vehicles') }}</p>
+    <p class="text-xs text-slate-500 dark:text-slate-400 my-2">{{ $vehicles->total() }} {{ __('nav.vehicles') }}</p>
 
     <div class="space-y-2">
         @forelse ($vehicles as $v)
@@ -24,21 +24,21 @@
                     <b><bdi>{{ is_array($v) ? ($v['brand'] ?? '').' '.($v['model'] ?? '') : $v->brand.' '.$v->model }}</bdi></b>
                     <x-stage-pill :stage="is_array($v) ? ($v['stage'] ?? '') : $v->stage" />
                 </div>
-                <div class="font-mono text-xs text-slate-500 ltr:text-left" dir="ltr">{{ $vin }}</div>
-                <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500 mt-1">
+                <div class="font-mono text-xs text-slate-500 dark:text-slate-400 text-start" dir="ltr">{{ $vin }}</div>
+                <div class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400 mt-1">
                     @php
                         $arr = is_array($v) ? $v : $v->toArray();
                         $bl = $arr['bl'] ?? '';
                         $client = $arr['client'] ?? $arr['buyer_name'] ?? '';
                         $loc = $arr['loc'] ?? $arr['warehouse_location'] ?? '';
                     @endphp
-                    @if ($bl)<span>B/L: <b class="text-slate-900 dark:text-slate-100 font-medium"><bdi>{{ $bl }}</bdi></b></span>@endif
+                    @if ($bl)<span>{{ __('vehicles.bl') }}: <b class="text-slate-900 dark:text-slate-100 font-medium"><bdi>{{ $bl }}</bdi></b></span>@endif
                     @if ($client)<span>{{ __('vehicles.client') }}: <b class="text-slate-900 dark:text-slate-100 font-medium"><bdi>{{ $client }}</bdi></b></span>@endif
                     @if ($loc)<span>{{ __('vehicles.loc') }}: <b class="text-slate-900 dark:text-slate-100 font-medium"><bdi>{{ $loc }}</bdi></b></span>@endif
                 </div>
             </a>
         @empty
-            <p class="text-sm text-slate-500">{{ __('app.no_results') }}</p>
+            <p class="text-sm text-slate-500 dark:text-slate-400">{{ __('app.no_results') }}</p>
         @endforelse
     </div>
 

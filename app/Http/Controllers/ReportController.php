@@ -27,7 +27,7 @@ class ReportController extends Controller
     public function show(string $key)
     {
         $query = ReportRegistry::find($key);
-        abort_if(! $query, 404, 'Unknown report');
+        abort_if(! $query, 404, __('reports.unknown'));
 
         return view('reports.show', [
             'report' => $query,
@@ -39,7 +39,7 @@ class ReportController extends Controller
     public function export(Request $request, string $key, ReportPdfService $pdfs): BinaryFileResponse|Response
     {
         $query = ReportRegistry::find($key);
-        abort_if(! $query, 404, 'Unknown report');
+        abort_if(! $query, 404, __('reports.unknown'));
 
         $format = strtolower((string) $request->query('format', 'xlsx'));
 
@@ -54,6 +54,6 @@ class ReportController extends Controller
             );
         }
 
-        abort(400, 'Unsupported format. Use ?format=xlsx or ?format=pdf.');
+        abort(400, __('reports.bad_format'));
     }
 }

@@ -19,6 +19,9 @@ class TransitionForm extends Component
 
     public array $data = [];
 
+    /** @var array<string, string> */
+    protected array $messages = [];
+
     public function mount(string $vin, string $transitionKey): void
     {
         $this->vin = $vin;
@@ -60,7 +63,7 @@ class TransitionForm extends Component
     {
         $def = VehicleMeta::transitions()[$this->transitionKey] ?? null;
         if (! $def) {
-            $this->addError('data', 'Unknown transition');
+            $this->addError('data', __('vehicles.unknown_transition'));
 
             return null;
         }
@@ -83,7 +86,7 @@ class TransitionForm extends Component
 
         try {
             if (! Schema::hasTable('vehicles')) {
-                $this->addError('data', 'vehicles table missing');
+                $this->addError('data', __('vehicles.table_missing'));
 
                 return null;
             }
@@ -98,7 +101,9 @@ class TransitionForm extends Component
                     $col = $map[$f] ?? $f;
                 }
                 if (in_array($col, $columns, true)) {
-                    $payload[$col] = trim((string) ($this->data[$f] ?? ''));
+                    // Empty strings crash decimal/date casts on read — store null.
+                    $clean = trim((string) ($this->data[$f] ?? ''));
+                    $payload[$col] = $clean === '' ? null : $clean;
                 }
             }
             if (in_array('stage', $columns, true)) {
@@ -132,7 +137,8 @@ class TransitionForm extends Component
                 // ignore
             }
         } catch (\Throwable $e) {
-            $this->addError('data', $e->getMessage());
+            report($e);
+            $this->addError('data', __('vehicles.table_missing'));
 
             return null;
         }
@@ -145,7 +151,7 @@ class TransitionForm extends Component
     public function render()
     {
         $def = VehicleMeta::transitions()[$this->transitionKey] ?? null;
-        abort_if(! $def, 400, 'This action is not available at the current stage');
+        abort_if(! $def, 400, __('vehicles.stage_unavailable'));
 
         return view('livewire.vehicles.transition-form', [
             'def' => $def,

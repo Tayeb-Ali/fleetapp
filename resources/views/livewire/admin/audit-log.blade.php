@@ -1,29 +1,29 @@
 <div>
-  <h1>Audit log</h1>
+    <h1 class="text-lg font-bold text-start">{{ __('nav.audit') }}</h1>
 
-  @if($entries === [])
-    <p style="color:#666;margin-top:12px;">No audit entries yet.</p>
-  @else
-    <p style="color:#666;font-size:12px;">Latest {{ count($entries) }} entries.</p>
-    <div style="overflow-x:auto;margin-top:8px;">
-      <table style="width:100%;border-collapse:collapse;">
-        <thead>
-          <tr style="text-align:left;border-bottom:2px solid #ddd;">
-            @foreach($columns as $column)
-              <th style="padding:8px;">{{ $column }}</th>
-            @endforeach
-          </tr>
-        </thead>
-        <tbody>
-          @foreach($entries as $entry)
-            <tr style="border-bottom:1px solid #eee;">
-              @foreach($columns as $column)
-                <td style="padding:8px;">{{ is_scalar($entry[$column] ?? null) ? $entry[$column] : json_encode($entry[$column] ?? null) }}</td>
-              @endforeach
-            </tr>
-          @endforeach
-        </tbody>
-      </table>
-    </div>
-  @endif
+    @if ($entries === [])
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-3">{{ __('app.no_results') }}</p>
+    @else
+        <p class="text-xs text-slate-500 dark:text-slate-400">{{ __('app.total') }}: {{ count($entries) }}</p>
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-x-auto mt-2">
+            <table class="w-full border-collapse text-sm">
+                <thead>
+                    <tr class="border-b-2 border-slate-200 dark:border-slate-800 text-start">
+                        @foreach ($columns as $column)
+                            <th class="p-2 text-start font-semibold" dir="ltr">{{ $column }}</th>
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($entries as $entry)
+                        <tr class="border-b border-slate-100 dark:border-slate-800 last:border-0">
+                            @foreach ($columns as $column)
+                                <td class="p-2 text-start align-top">{{ is_scalar($entry[$column] ?? null) ? $entry[$column] : json_encode($entry[$column] ?? null) }}</td>
+                            @endforeach
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
 </div>

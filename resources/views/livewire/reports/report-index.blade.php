@@ -1,11 +1,11 @@
 <div>
-  <h1>Reports</h1>
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:12px;">
+  <h1 class="text-xl font-semibold text-slate-900 dark:text-slate-100">{{ __('nav.reports') }}</h1>
+  <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
     @foreach($reports as $report)
-      <div style="border:1px solid #ddd;border-radius:8px;padding:12px;">
-        <strong>{{ $report->titleKey() }}</strong>
-        <div style="color:#666;font-size:12px;margin:4px 0 8px 0;">{{ count($report->rows()) }} rows &middot; {{ count($report->columns()) }} columns</div>
-        <a href="{{ route('reports.show', $report->key()) }}">View</a>
+      <div class="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+        <strong class="text-slate-900 dark:text-slate-100">{{ $report->titleKey() }}</strong>
+        <div class="my-1 text-xs text-slate-500 dark:text-slate-400">{{ count($report->rows()) }} {{ __('reports.rows') }} &middot; {{ count($report->columns()) }} {{ __('reports.columns') }}</div>
+        <a href="{{ route('reports.show', $report->key()) }}">{{ __('actions.view') }}</a>
         &middot; <a href="{{ route('reports.export', $report->key()) }}?format=xlsx">XLSX</a>
         &middot; <a href="{{ route('reports.export', $report->key()) }}?format=pdf">PDF</a>
       </div>

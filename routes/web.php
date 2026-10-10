@@ -46,7 +46,7 @@ Route::middleware(['auth'])->group(function () {
         ->name('documents.delivery-note');
 
     Route::get('/notifications', fn () => view('notifications.index'))->name('notifications.index');
-    Route::get('/attachments/{attachment}/download', [AttachmentDownloadController::class, 'download'])
+    Route::get('/attachments/{attachment}/download', AttachmentDownloadController::class)
         ->name('attachments.download');
     Route::get('/users', fn () => view('users.index'))->name('users.index');
     Route::get('/audit', fn () => view('audit.index'))->name('audit.index');

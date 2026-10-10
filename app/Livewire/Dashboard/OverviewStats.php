@@ -53,7 +53,9 @@ class OverviewStats extends Component
                 $n += (int) ($counts[$from] ?? 0);
             }
             if ($n > 0) {
-                $tasks[] = ['key' => $key, 'label' => $t['label'] ?? $key, 'from' => $t['from'] ?? [], 'count' => $n];
+                $labelKey = 'vehicle.transitions.'.$key;
+                $label = __($labelKey) === $labelKey ? ($t['label'] ?? $key) : __($labelKey);
+                $tasks[] = ['key' => $key, 'label' => $label, 'from' => $t['from'] ?? [], 'count' => $n];
             }
         }
 

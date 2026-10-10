@@ -20,7 +20,7 @@ class ReportShow extends Component
     public function render()
     {
         $query = ReportRegistry::find($this->reportKey);
-        abort_if(! $query, 404, 'Unknown report');
+        abort_if(! $query, 404, __('reports.unknown'));
 
         return view('livewire.reports.report-show', [
             'report' => $query,

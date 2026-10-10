@@ -79,8 +79,8 @@ class DocumentController extends Controller
     public function saleOrder(string $vin)
     {
         $vehicle = $this->findVehicle($vin);
-        abort_if(! $vehicle, 404, 'Vehicle not found');
-        abort_if(empty($vehicle['ord_no']), 400, 'Sale order is not available at the current stage.');
+        abort_if(! $vehicle, 404, __('vehicles.not_found'));
+        abort_if(empty($vehicle['ord_no']), 400, __('documents.sale_unavailable'));
 
         return Pdf::loadView('documents.sale-order', [
             'vehicle' => $vehicle,
@@ -95,8 +95,8 @@ class DocumentController extends Controller
     public function deliveryNote(string $vin)
     {
         $vehicle = $this->findVehicle($vin);
-        abort_if(! $vehicle, 404, 'Vehicle not found');
-        abort_if(($vehicle['stage'] ?? null) !== 'delivered', 400, 'Delivery note is not available at the current stage.');
+        abort_if(! $vehicle, 404, __('vehicles.not_found'));
+        abort_if(($vehicle['stage'] ?? null) !== 'delivered', 400, __('documents.delivery_unavailable'));
 
         return Pdf::loadView('documents.delivery-note', [
             'vehicle' => $vehicle,

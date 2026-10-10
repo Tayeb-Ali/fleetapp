@@ -20,6 +20,9 @@ class VehicleAttachments extends Component
 
     public $file = null;
 
+    /** @var array<string, string> */
+    protected array $messages = [];
+
     public function mount(string $vin): void
     {
         $this->vin = $vin;
@@ -32,7 +35,7 @@ class VehicleAttachments extends Component
         $action->execute($this->vin, $this->file, auth()->id());
 
         $this->reset('file');
-        session()->flash('attachments-ok', 'File attached.');
+        session()->flash('attachments-ok', __('attachments.attached'));
     }
 
     public function delete(int $id, DeleteAttachmentAction $action): void
@@ -42,7 +45,7 @@ class VehicleAttachments extends Component
 
         $action->execute($attachment, auth()->user());
 
-        session()->flash('attachments-ok', 'Attachment deleted.');
+        session()->flash('attachments-ok', __('attachments.deleted'));
     }
 
     public function render()

@@ -7,7 +7,7 @@
                 <a href="{{ route('vehicles.index', ['stage' => $from]) }}"
                    class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 border-s-4"
                    style="border-inline-start-color: {{ $colors[$from] ?? '#4f46e5' }}">
-                    <span class="text-xs text-slate-500">{{ $task['label'] }}</span>
+                    <span class="text-xs text-slate-500 dark:text-slate-400">{{ $task['label'] }}</span>
                     <b class="block text-2xl">{{ $task['count'] }}</b>
                 </a>
             @endforeach
@@ -20,7 +20,7 @@
             <a href="{{ route('vehicles.index', ['stage' => $key]) }}"
                class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 border-s-4"
                style="border-inline-start-color: {{ $colors[$key] ?? '#4f46e5' }}">
-                <span class="text-xs text-slate-500">{{ __($label === $label ? 'stages.'.$key : $label) === 'stages.'.$key ? $label : __('stages.'.$key) }}</span>
+                <span class="text-xs text-slate-500 dark:text-slate-400">{{ __($label === $label ? 'stages.'.$key : $label) === 'stages.'.$key ? $label : __('stages.'.$key) }}</span>
                 <b class="block text-2xl">{{ $counts[$key] ?? 0 }}</b>
             </a>
         @endforeach

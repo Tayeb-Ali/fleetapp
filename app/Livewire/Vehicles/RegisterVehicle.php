@@ -14,6 +14,9 @@ class RegisterVehicle extends Component
 {
     public array $data = [];
 
+    /** @var array<string, string> */
+    protected array $messages = [];
+
     public function mount(): void
     {
         $fields = config('fleet.create_fields', ['brand', 'model', 'vin', 'fuel', 'pdate', 'supplier', 'cost', 'bl', 'voy', 'pol', 'pod', 'ship', 'arr', 'remarks']);
@@ -38,13 +41,15 @@ class RegisterVehicle extends Component
 
         $payload = [];
         foreach ($this->data as $k => $v) {
-            $payload[$k] = trim((string) $v);
+            // Empty strings crash decimal/date casts on read — store null.
+            $clean = trim((string) $v);
+            $payload[$k] = $clean === '' ? null : $clean;
         }
         $payload['stage'] = ! empty($payload['bl']) ? 'shipped' : 'purchased';
 
         try {
             if (! Schema::hasTable('vehicles')) {
-                $this->addError('data.vin', 'vehicles table missing');
+                $this->addError('data.vin', __('vehicles.table_missing'));
 
                 return null;
             }
@@ -60,7 +65,7 @@ class RegisterVehicle extends Component
             if (class_exists(Vehicle::class)) {
                 $model = Vehicle::class;
                 if ($model::query()->where('vin', $vin)->exists()) {
-                    $this->addError('data.vin', 'Chassis number already registered');
+                    $this->addError('data.vin', __('vehicles.already_registered'));
 
                     return null;
                 }
@@ -72,14 +77,15 @@ class RegisterVehicle extends Component
                 $model::query()->create($payload);
             } else {
                 if (DB::table('vehicles')->where('vin', $vin)->exists()) {
-                    $this->addError('data.vin', 'Chassis number already registered');
+                    $this->addError('data.vin', __('vehicles.already_registered'));
 
                     return null;
                 }
                 DB::table('vehicles')->insert($payload + ['vin' => $vin]);
             }
         } catch (\Throwable $e) {
-            $this->addError('data.vin', $e->getMessage());
+            report($e);
+            $this->addError('data.vin', __('vehicles.table_missing'));
 
             return null;
         }

@@ -1,42 +1,42 @@
 <div>
-  <h1>Settings</h1>
+    <h1 class="text-lg font-bold text-start">{{ __('nav.settings') }}</h1>
 
-  @if(session('status'))
-    <div style="border:1px solid #15803d;color:#15803d;border-radius:8px;padding:8px 12px;margin:12px 0;">{{ session('status') }}</div>
-  @endif
+    @if (session('status'))
+        <div class="border border-green-600/40 bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-300 rounded-xl px-3 py-2 my-3 text-sm max-w-3xl">{{ session('status') }}</div>
+    @endif
 
-  <form wire:submit="save" style="display:grid;gap:12px;max-width:720px;margin-top:12px;">
-    <label>Company
-      <input type="text" wire:model="company" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;">
-    </label>
-    @error('company')<span style="color:#b91c1c;font-size:12px;">{{ $message }}</span>@enderror
+    <form wire:submit="save" class="grid gap-3 max-w-3xl mt-3">
+        <label class="block text-xs text-slate-500 dark:text-slate-400">{{ __('admin.company') }}
+            <input type="text" wire:model="company" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 dark:text-slate-100 text-sm mt-1">
+        </label>
+        @error('company')<span class="text-xs text-red-600">{{ $message }}</span>@enderror
 
-    <label>Currency
-      <input type="text" wire:model="currency" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;">
-    </label>
-    @error('currency')<span style="color:#b91c1c;font-size:12px;">{{ $message }}</span>@enderror
+        <label class="block text-xs text-slate-500 dark:text-slate-400">{{ __('admin.currency') }}
+            <input type="text" wire:model="currency" dir="ltr" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 dark:text-slate-100 text-sm mt-1 text-start">
+        </label>
+        @error('currency')<span class="text-xs text-red-600">{{ $message }}</span>@enderror
 
-    <h2 style="margin-top:8px;">Transition permissions</h2>
-    @foreach($transitions as $key => $transition)
-      <fieldset style="border:1px solid #ddd;border-radius:8px;padding:12px;">
-        <legend style="padding:0 6px;"><strong>{{ $transition['label'] }}</strong> <span style="color:#666;">({{ $key }})</span></legend>
-        <div style="font-size:13px;color:#444;margin-bottom:4px;">Who may perform:</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px 16px;margin-bottom:8px;">
-          @foreach($performerRoles as $roleKey => $roleLabel)
-            <label style="font-size:13px;"><input type="checkbox" wire:model="perm.{{ $key }}.roles" value="{{ $roleKey }}"> {{ $roleLabel }}</label>
-          @endforeach
+        <h2 class="font-bold mt-2 text-start">{{ __('admin.permissions_title') }}</h2>
+        @foreach ($transitions as $key => $transition)
+            <fieldset class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+                <legend class="px-1.5 text-sm"><strong>{{ $transition['label'] }}</strong> <span class="text-slate-500 dark:text-slate-400" dir="ltr">({{ $key }})</span></legend>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mb-1 text-start">{{ __('admin.who_may') }}</div>
+                <div class="flex flex-wrap gap-x-4 gap-y-2 mb-3">
+                    @foreach ($performerRoles as $roleKey => $roleLabel)
+                        <label class="flex items-center gap-1.5 text-xs"><input type="checkbox" wire:model="perm.{{ $key }}.roles" value="{{ $roleKey }}" class="accent-indigo-600"> {{ $roleLabel }}</label>
+                    @endforeach
+                </div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mb-1 text-start">{{ __('admin.notify') }}</div>
+                <div class="flex flex-wrap gap-x-4 gap-y-2">
+                    @foreach ($notifyRoles as $roleKey => $roleLabel)
+                        <label class="flex items-center gap-1.5 text-xs"><input type="checkbox" wire:model="perm.{{ $key }}.notify" value="{{ $roleKey }}" class="accent-indigo-600"> {{ $roleLabel }}</label>
+                    @endforeach
+                </div>
+            </fieldset>
+        @endforeach
+
+        <div>
+            <button type="submit" class="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold">{{ __('actions.save') }}</button>
         </div>
-        <div style="font-size:13px;color:#444;margin-bottom:4px;">Notify:</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px 16px;">
-          @foreach($notifyRoles as $roleKey => $roleLabel)
-            <label style="font-size:13px;"><input type="checkbox" wire:model="perm.{{ $key }}.notify" value="{{ $roleKey }}"> {{ $roleLabel }}</label>
-          @endforeach
-        </div>
-      </fieldset>
-    @endforeach
-
-    <div>
-      <button type="submit" style="padding:8px 16px;border:1px solid #1f3a8a;background:#1f3a8a;color:#fff;border-radius:8px;">Save settings</button>
-    </div>
-  </form>
+    </form>
 </div>

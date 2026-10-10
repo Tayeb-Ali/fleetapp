@@ -1,98 +1,112 @@
 <div>
-  <h1>Users</h1>
+    <h1 class="text-lg font-bold text-start">{{ __('nav.users') }}</h1>
 
-  @if(session('status'))
-    <div style="border:1px solid #15803d;color:#15803d;border-radius:8px;padding:8px 12px;margin:12px 0;">{{ session('status') }}</div>
-  @endif
-  @if(session('error'))
-    <div style="border:1px solid #b91c1c;color:#b91c1c;border-radius:8px;padding:8px 12px;margin:12px 0;">{{ session('error') }}</div>
-  @endif
+    @if (session('status'))
+        <div class="border border-green-600/40 bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-300 rounded-xl px-3 py-2 my-3 text-sm">{{ session('status') }}</div>
+    @endif
+    @if (session('error'))
+        <div class="border border-red-600/40 bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300 rounded-xl px-3 py-2 my-3 text-sm">{{ session('error') }}</div>
+    @endif
 
-  <div style="display:flex;gap:8px;margin:12px 0;">
-    <input type="text" wire:model.live="search" placeholder="Search username, name, email, role..." style="flex:1;padding:8px;border:1px solid #ccc;border-radius:8px;">
-    <button wire:click="create" style="padding:8px 16px;border:1px solid #1f3a8a;background:#1f3a8a;color:#fff;border-radius:8px;">New user</button>
-  </div>
-
-  <table style="width:100%;border-collapse:collapse;">
-    <thead>
-      <tr style="text-align:left;border-bottom:2px solid #ddd;">
-        <th style="padding:8px;">Username</th>
-        <th style="padding:8px;">Name</th>
-        <th style="padding:8px;">Email</th>
-        <th style="padding:8px;">Role</th>
-        <th style="padding:8px;">Active</th>
-        <th style="padding:8px;">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      @forelse($users as $user)
-        <tr style="border-bottom:1px solid #eee;">
-          <td style="padding:8px;">{{ $user->username }}</td>
-          <td style="padding:8px;">{{ $user->name }}</td>
-          <td style="padding:8px;">{{ $user->email ?? '-' }}</td>
-          <td style="padding:8px;">{{ $roles[$user->role] ?? $user->role }}</td>
-          <td style="padding:8px;">{{ $user->active ? 'Yes' : 'No' }}</td>
-          <td style="padding:8px;white-space:nowrap;">
-            <button wire:click="edit({{ $user->id }})">Edit</button>
-            <button wire:click="toggleActive({{ $user->id }})">{{ $user->active ? 'Disable' : 'Enable' }}</button>
-            <button wire:click="openPasswordReset({{ $user->id }})">Reset password</button>
-          </td>
-        </tr>
-      @empty
-        <tr><td colspan="6" style="padding:16px;color:#666;">No users found.</td></tr>
-      @endforelse
-    </tbody>
-  </table>
-
-  <div style="margin-top:12px;">{{ $users->links() }}</div>
-
-  @if($showModal)
-    <div style="position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;">
-      <div style="background:#fff;border-radius:12px;padding:20px;min-width:320px;max-width:480px;width:90%;">
-        <h2>{{ $editingId ? 'Edit user' : 'New user' }}</h2>
-        <div style="display:grid;gap:8px;margin-top:12px;">
-          <label>Username <input type="text" wire:model="username" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;"></label>
-          @error('username')<span style="color:#b91c1c;font-size:12px;">{{ $message }}</span>@enderror
-          <label>Name <input type="text" wire:model="name" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;"></label>
-          @error('name')<span style="color:#b91c1c;font-size:12px;">{{ $message }}</span>@enderror
-          <label>Email (optional) <input type="email" wire:model="email" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;"></label>
-          @error('email')<span style="color:#b91c1c;font-size:12px;">{{ $message }}</span>@enderror
-          <label>Role
-            <select wire:model="role" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;">
-              @foreach($roles as $key => $label)
-                <option value="{{ $key }}">{{ $label }}</option>
-              @endforeach
-            </select>
-          </label>
-          @error('role')<span style="color:#b91c1c;font-size:12px;">{{ $message }}</span>@enderror
-          @if($editingId)
-            <label><input type="checkbox" wire:model="active"> Active</label>
-            @error('active')<span style="color:#b91c1c;font-size:12px;">{{ $message }}</span>@enderror
-          @endif
-          <label>{{ $editingId ? 'New password (leave blank to keep)' : 'Password (min 6)' }} <input type="password" wire:model="password" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;"></label>
-          @error('password')<span style="color:#b91c1c;font-size:12px;">{{ $message }}</span>@enderror
-        </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
-          <button wire:click="closeModal">Cancel</button>
-          <button wire:click="save" style="padding:8px 16px;border:1px solid #1f3a8a;background:#1f3a8a;color:#fff;border-radius:8px;">Save</button>
-        </div>
-      </div>
+    <div class="flex gap-2 my-3">
+        <input type="text" wire:model.live="search" placeholder="{{ __('users.search_placeholder') }}" class="flex-1 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 dark:text-slate-100 text-sm">
+        <button wire:click="create" class="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold whitespace-nowrap">{{ __('users.new_user') }}</button>
     </div>
-  @endif
 
-  @if($showPasswordModal)
-    <div style="position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;">
-      <div style="background:#fff;border-radius:12px;padding:20px;min-width:320px;max-width:420px;width:90%;">
-        <h2>Reset password</h2>
-        <div style="display:grid;gap:8px;margin-top:12px;">
-          <label>New password (min 6) <input type="password" wire:model="newPassword" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;"></label>
-          @error('newPassword')<span style="color:#b91c1c;font-size:12px;">{{ $message }}</span>@enderror
-        </div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
-          <button wire:click="closeModal">Cancel</button>
-          <button wire:click="resetPassword" style="padding:8px 16px;border:1px solid #1f3a8a;background:#1f3a8a;color:#fff;border-radius:8px;">Reset</button>
-        </div>
-      </div>
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-x-auto">
+        <table class="w-full border-collapse text-sm">
+            <thead>
+                <tr class="border-b-2 border-slate-200 dark:border-slate-800 text-start">
+                    <th class="p-2 text-start font-semibold">{{ __('users.username') }}</th>
+                    <th class="p-2 text-start font-semibold">{{ __('users.name') }}</th>
+                    <th class="p-2 text-start font-semibold">{{ __('users.email') }}</th>
+                    <th class="p-2 text-start font-semibold">{{ __('users.role') }}</th>
+                    <th class="p-2 text-start font-semibold">{{ __('users.active') }}</th>
+                    <th class="p-2 text-start font-semibold">{{ __('users.actions') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse ($users as $user)
+                    <tr class="border-b border-slate-100 dark:border-slate-800 last:border-0">
+                        <td class="p-2" dir="ltr"><bdi>{{ $user->username }}</bdi></td>
+                        <td class="p-2"><bdi>{{ $user->name }}</bdi></td>
+                        <td class="p-2" dir="ltr"><bdi>{{ $user->email ?? '-' }}</bdi></td>
+                        <td class="p-2">{{ $roles[$user->role] ?? $user->role }}</td>
+                        <td class="p-2">{{ $user->active ? __('users.yes') : __('users.no') }}</td>
+                        <td class="p-2 whitespace-nowrap">
+                            <span class="inline-flex flex-wrap gap-1.5">
+                                <button wire:click="edit({{ $user->id }})" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs">{{ __('users.edit') }}</button>
+                                <button wire:click="toggleActive({{ $user->id }})" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-white {{ $user->active ? 'bg-red-600' : 'bg-indigo-600' }}">{{ $user->active ? __('users.disable') : __('users.enable') }}</button>
+                                <button wire:click="openPasswordReset({{ $user->id }})" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs">{{ __('users.reset_password') }}</button>
+                            </span>
+                        </td>
+                    </tr>
+                @empty
+                    <tr><td colspan="6" class="p-4 text-sm text-slate-500 dark:text-slate-400">{{ __('users.no_users') }}</td></tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
-  @endif
+
+    <div class="mt-3">{{ $users->links() }}</div>
+
+    @if ($showModal)
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 w-full max-w-md">
+                <h2 class="font-bold text-start">{{ $editingId ? __('users.edit_user') : __('users.new_user') }}</h2>
+                <div class="grid gap-2 mt-3">
+                    <label class="block text-xs text-slate-500 dark:text-slate-400">{{ __('users.username') }}
+                        <input type="text" wire:model="username" dir="ltr" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 dark:text-slate-100 text-sm mt-1">
+                    </label>
+                    @error('username')<span class="text-xs text-red-600">{{ $message }}</span>@enderror
+                    <label class="block text-xs text-slate-500 dark:text-slate-400">{{ __('users.name') }}
+                        <input type="text" wire:model="name" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 dark:text-slate-100 text-sm mt-1">
+                    </label>
+                    @error('name')<span class="text-xs text-red-600">{{ $message }}</span>@enderror
+                    <label class="block text-xs text-slate-500 dark:text-slate-400">{{ __('users.email_optional') }}
+                        <input type="email" wire:model="email" dir="ltr" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 dark:text-slate-100 text-sm mt-1">
+                    </label>
+                    @error('email')<span class="text-xs text-red-600">{{ $message }}</span>@enderror
+                    <label class="block text-xs text-slate-500 dark:text-slate-400">{{ __('users.role') }}
+                        <select wire:model="role" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 dark:text-slate-100 text-sm mt-1">
+                            @foreach ($roles as $key => $label)
+                                <option value="{{ $key }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    @error('role')<span class="text-xs text-red-600">{{ $message }}</span>@enderror
+                    @if ($editingId)
+                        <label class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400"><input type="checkbox" wire:model="active" class="accent-indigo-600"> {{ __('users.active') }}</label>
+                        @error('active')<span class="text-xs text-red-600">{{ $message }}</span>@enderror
+                    @endif
+                    <label class="block text-xs text-slate-500 dark:text-slate-400">{{ $editingId ? __('users.new_password_blank') : __('users.password_min6') }}
+                        <input type="password" wire:model="password" dir="ltr" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 dark:text-slate-100 text-sm mt-1">
+                    </label>
+                    @error('password')<span class="text-xs text-red-600">{{ $message }}</span>@enderror
+                </div>
+                <div class="flex gap-2 justify-end mt-4">
+                    <button wire:click="closeModal" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm">{{ __('actions.cancel') }}</button>
+                    <button wire:click="save" class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold">{{ __('actions.save') }}</button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if ($showPasswordModal)
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 w-full max-w-sm">
+                <h2 class="font-bold text-start">{{ __('users.reset_password') }}</h2>
+                <div class="grid gap-2 mt-3">
+                    <label class="block text-xs text-slate-500 dark:text-slate-400">{{ __('users.new_password') }}
+                        <input type="password" wire:model="newPassword" dir="ltr" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 dark:text-slate-100 text-sm mt-1">
+                    </label>
+                    @error('newPassword')<span class="text-xs text-red-600">{{ $message }}</span>@enderror
+                </div>
+                <div class="flex gap-2 justify-end mt-4">
+                    <button wire:click="closeModal" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-sm">{{ __('actions.cancel') }}</button>
+                    <button wire:click="resetPassword" class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold">{{ __('users.reset') }}</button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

@@ -46,6 +46,13 @@ class RegisterVehicleAction
 
         $validated = Validator::make($data, self::rules())->validate();
 
+        // Empty strings crash decimal/date casts on read — store null.
+        foreach ($validated as $key => $value) {
+            if ($value === '') {
+                $validated[$key] = null;
+            }
+        }
+
         // Legacy line 154: stage auto — shipped when B/L present, else purchased.
         $validated['stage'] = ! empty($validated['bl'] ?? $data['bl'] ?? null)
             ? VehicleStage::Shipped->value

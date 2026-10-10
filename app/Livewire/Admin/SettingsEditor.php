@@ -60,7 +60,7 @@ class SettingsEditor extends Component
             'perm' => $this->perm,
         ]);
 
-        session()->flash('status', 'Settings saved.');
+        session()->flash('status', __('app.saved'));
     }
 
     /**

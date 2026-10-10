@@ -15,6 +15,9 @@ class Login extends Component
 
     public string $password = '';
 
+    /** @var array<string, string> */
+    protected array $messages = [];
+
     public function login(): mixed
     {
         $this->validate([
@@ -27,7 +30,7 @@ class Login extends Component
         if (! Auth::attempt(['username' => $username, 'password' => $this->password], true)) {
             // Fallback: allow email as username for default Laravel users.
             if (! Auth::attempt(['email' => $username, 'password' => $this->password], true)) {
-                $this->addError('username', 'Wrong username or password');
+                $this->addError('username', __('auth.failed'));
 
                 return null;
             }
@@ -37,7 +40,7 @@ class Login extends Component
         $user = Auth::user();
         if ($user && isset($user->active) && ! $user->active) {
             Auth::logout();
-            $this->addError('username', 'Account disabled');
+            $this->addError('username', __('auth.disabled'));
 
             return null;
         }

@@ -36,7 +36,7 @@
     <div class="flex items-center gap-2">
         <a href="{{ route('lang.switch', 'en') }}" class="text-xs px-2 py-1 rounded border {{ app()->getLocale() === 'en' ? 'bg-indigo-600 text-white border-indigo-600' : 'border-slate-300 dark:border-slate-700' }}">EN</a>
         <a href="{{ route('lang.switch', 'ar') }}" class="text-xs px-2 py-1 rounded border {{ app()->getLocale() === 'ar' ? 'bg-indigo-600 text-white border-indigo-600' : 'border-slate-300 dark:border-slate-700' }}">عر</a>
-        <button onclick="toggleTheme()" class="text-xs px-2 py-1 rounded border border-slate-300 dark:border-slate-700" title="{{ __('app.dark_mode') }}">◐</button>
+        <button onclick="toggleTheme()" class="text-xs px-2 py-1 rounded border border-slate-300 dark:border-slate-700" title="{{ __('app.dark_mode') }}" aria-label="{{ __('app.dark_mode') }}" aria-pressed="false">◐</button>
         @auth
             <form method="POST" action="{{ route('logout') }}" class="inline">
                 @csrf
@@ -61,7 +61,7 @@
     @endphp
     @foreach ($tabs as [$route, $label, $fallback])
         @if (Route::has($route))
-            <a href="{{ route($route) }}" class="px-3 py-2 rounded-lg whitespace-nowrap {{ request()->routeIs($route.'*') ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow' : 'text-slate-500 dark:text-slate-400' }}">{{ __($label) }}</a>
+            <a href="{{ route($route) }}" class="px-3 py-2 rounded-lg whitespace-nowrap {{ request()->routeIs($route.'*') ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow' : 'text-slate-500 dark:text-slate-400' }}">{{ __($label) }}</a>
         @else
             <a href="{{ $fallback }}" class="px-3 py-2 rounded-lg whitespace-nowrap text-slate-500 dark:text-slate-400">{{ __($label) }}</a>
         @endif

@@ -108,6 +108,13 @@ class UpdateVehicleDataAction
 
         $validated = Validator::make($data, $rules)->validate();
 
+        // Empty strings crash decimal/date casts on read — store null.
+        foreach ($validated as $key => $value) {
+            if ($value === '') {
+                $validated[$key] = null;
+            }
+        }
+
         if (array_key_exists('stage', $validated) && $validated['stage'] !== null) {
             $validated['stage'] = VehicleStage::from($validated['stage'])->value;
         }

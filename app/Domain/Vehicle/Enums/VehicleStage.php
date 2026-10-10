@@ -23,14 +23,14 @@ enum VehicleStage: string
     public function color(): string
     {
         return match ($this) {
-            self::Purchased => 'gray',
-            self::Shipped => 'blue',
-            self::Arrived => 'indigo',
-            self::Clearing => 'amber',
-            self::Cleared => 'teal',
-            self::Instock => 'green',
-            self::Sold => 'orange',
-            self::Delivered => 'emerald',
+            self::Purchased => '#94a3b8',
+            self::Shipped => '#8b5cf6',
+            self::Arrived => '#0ea5e9',
+            self::Clearing => '#f59e0b',
+            self::Cleared => '#f97316',
+            self::Instock => '#14b8a6',
+            self::Sold => '#ec4899',
+            self::Delivered => '#22c55e',
         };
     }
 
