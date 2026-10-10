@@ -26,23 +26,30 @@
     </script>
 </head>
 <body class="bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen font-sans">
-<header class="max-w-5xl mx-auto px-4 pt-4 flex items-center justify-between gap-3">
-    <div>
-        <h1 class="text-lg font-bold">{{ __('app.name') }}</h1>
-        @auth
-            <p class="text-xs text-slate-500 dark:text-slate-400">{{ auth()->user()->name }} · {{ __('roles.'.auth()->user()->role) }}</p>
-        @endauth
-    </div>
-    <div class="flex items-center gap-2">
-        <a href="{{ route('lang.switch', 'en') }}" class="text-xs px-2 py-1 rounded border {{ app()->getLocale() === 'en' ? 'bg-indigo-600 text-white border-indigo-600' : 'border-slate-300 dark:border-slate-700' }}">EN</a>
-        <a href="{{ route('lang.switch', 'ar') }}" class="text-xs px-2 py-1 rounded border {{ app()->getLocale() === 'ar' ? 'bg-indigo-600 text-white border-indigo-600' : 'border-slate-300 dark:border-slate-700' }}">عر</a>
-        <button onclick="toggleTheme()" class="text-xs px-2 py-1 rounded border border-slate-300 dark:border-slate-700" title="{{ __('app.dark_mode') }}" aria-label="{{ __('app.dark_mode') }}" aria-pressed="false">◐</button>
-        @auth
-            <form method="POST" action="{{ route('logout') }}" class="inline">
-                @csrf
-                <button type="submit" class="text-xs px-3 py-1.5 rounded-full bg-slate-200 dark:bg-slate-800">{{ __('app.sign_out') }}</button>
-            </form>
-        @endauth
+<header class="mx-auto w-full max-w-5xl px-4 pt-4">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="min-w-0">
+            <h1 class="truncate text-lg font-bold">{{ __('app.name') }}</h1>
+            @auth
+                <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ auth()->user()->name }} · {{ __('roles.'.auth()->user()->role) }}</p>
+            @endauth
+        </div>
+        <div class="flex flex-wrap items-center gap-2 sm:shrink-0">
+            <x-language-switch />
+            <button type="button" onclick="toggleTheme()" class="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-slate-300 text-slate-500 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800" title="{{ __('app.dark_mode') }}" aria-label="{{ __('app.dark_mode') }}" aria-pressed="false">
+                <svg class="h-4 w-4 dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+                <svg class="hidden h-4 w-4 dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+            </button>
+            @auth
+                <form method="POST" action="{{ route('logout') }}" class="inline-flex">
+                    @csrf
+                    <button type="submit" class="inline-flex h-9 items-center gap-1.5 rounded-full bg-slate-200 px-3 text-xs font-semibold text-slate-700 transition hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg>
+                        <span class="hidden sm:inline">{{ __('app.sign_out') }}</span>
+                    </button>
+                </form>
+            @endauth
+        </div>
     </div>
 </header>
 

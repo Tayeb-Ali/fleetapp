@@ -18,18 +18,19 @@
 
         <h2 class="font-bold mt-2 text-start">{{ __('admin.permissions_title') }}</h2>
         @foreach ($transitions as $key => $transition)
+            @php $tKey = 'vehicle.transitions.'.$key; $tLabel = __($tKey) === $tKey ? ($transition['label'] ?? $key) : __($tKey); @endphp
             <fieldset class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
-                <legend class="px-1.5 text-sm"><strong>{{ $transition['label'] }}</strong> <span class="text-slate-500 dark:text-slate-400" dir="ltr">({{ $key }})</span></legend>
+                <legend class="px-1.5 text-sm"><strong>{{ $tLabel }}</strong> <span class="text-slate-500 dark:text-slate-400" dir="ltr">({{ $key }})</span></legend>
                 <div class="text-xs text-slate-500 dark:text-slate-400 mb-1 text-start">{{ __('admin.who_may') }}</div>
                 <div class="flex flex-wrap gap-x-4 gap-y-2 mb-3">
                     @foreach ($performerRoles as $roleKey => $roleLabel)
-                        <label class="flex items-center gap-1.5 text-xs"><input type="checkbox" wire:model="perm.{{ $key }}.roles" value="{{ $roleKey }}" class="accent-indigo-600"> {{ $roleLabel }}</label>
+                        <label class="flex items-center gap-1.5 text-xs"><input type="checkbox" wire:model="perm.{{ $key }}.roles" value="{{ $roleKey }}" class="accent-indigo-600"> {{ __('roles.'.$roleKey) }}</label>
                     @endforeach
                 </div>
                 <div class="text-xs text-slate-500 dark:text-slate-400 mb-1 text-start">{{ __('admin.notify') }}</div>
                 <div class="flex flex-wrap gap-x-4 gap-y-2">
                     @foreach ($notifyRoles as $roleKey => $roleLabel)
-                        <label class="flex items-center gap-1.5 text-xs"><input type="checkbox" wire:model="perm.{{ $key }}.notify" value="{{ $roleKey }}" class="accent-indigo-600"> {{ $roleLabel }}</label>
+                        <label class="flex items-center gap-1.5 text-xs"><input type="checkbox" wire:model="perm.{{ $key }}.notify" value="{{ $roleKey }}" class="accent-indigo-600"> {{ __('roles.'.$roleKey) }}</label>
                     @endforeach
                 </div>
             </fieldset>

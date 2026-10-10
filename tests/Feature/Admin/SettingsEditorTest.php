@@ -32,6 +32,17 @@ class SettingsEditorTest extends TestCase
         $this->actingAs($admin)->get('/settings')->assertOk();
     }
 
+    public function test_settings_page_shows_translated_transition_and_role_labels(): void
+    {
+        $admin = $this->makeUser('admin');
+
+        $this->actingAs($admin)->get('/settings')
+            ->assertOk()
+            ->assertSee(__('vehicle.transitions.ship'))
+            ->assertSee(__('roles.purchaser'))
+            ->assertDontSee('Register shipment');
+    }
+
     public function test_admin_save_updates_company_currency_and_permissions(): void
     {
         $admin = $this->makeUser('admin');

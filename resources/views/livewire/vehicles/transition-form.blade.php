@@ -1,5 +1,6 @@
 <div class="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
-    <b>{{ $def['label'] ?? $transitionKey }}</b>
+    @php $tKey = 'vehicle.transitions.'.$transitionKey; $tLabel = __($tKey) === $tKey ? ($def['label'] ?? $transitionKey) : __($tKey); @endphp
+    <b>{{ $tLabel }}</b>
     <div class="mt-3 space-y-1">
         @foreach ((array) ($def['fields'] ?? ['remarks']) as $key)
             @php
