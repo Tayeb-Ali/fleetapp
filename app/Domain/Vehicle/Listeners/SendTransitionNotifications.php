@@ -4,58 +4,69 @@ declare(strict_types=1);
 
 namespace App\Domain\Vehicle\Listeners;
 
-use App\Domain\Notification\Notifications\VehicleTransitionNotification;
+use App\Domain\Identity\Services\SettingsService;
+use App\Domain\Notification\Notifications\FleetNotification;
+use App\Domain\Notification\Services\FleetNotifier;
 use App\Domain\Vehicle\Events\VehicleTransitioned;
-use App\Models\User;
-use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Facades\Schema;
+use App\Domain\Vehicle\Support\TransitionRegistry;
 
 /**
- * Notify users by role when a vehicle transitions.
+ * Notify configured roles when a vehicle transitions.
  *
- * Legacy: notify(roles, vin, text) inserts role notifs + emails
- * active users with those roles (server.js 41-43).
+ * Recipient roles come from Admin Settings (per-transition override), then the
+ * transition definition, then config. Admins are always included so the system
+ * owner keeps a full view of every movement.
  */
 class SendTransitionNotifications
 {
+    public function __construct(
+        protected TransitionRegistry $registry,
+        protected SettingsService $settings,
+        protected FleetNotifier $notifier,
+    ) {}
+
     public function handle(VehicleTransitioned $event): void
     {
-        $query = User::query();
+        $vehicle = $event->vehicle;
 
-        // Defensive: users.role / users.active may be owned by another
-        // worker and not exist yet. Filter only when columns exist.
+        $notification = new FleetNotification('vehicle', 'transitioned', [
+            'vin' => $vehicle->vin,
+            'vehicle' => trim((string) ($vehicle->brand ?? '').' '.(string) ($vehicle->model ?? '')),
+            'transition_key' => $event->transitionKey,
+            'from_stage' => $event->fromValue(),
+            'to_stage' => $event->toValue(),
+            'actor' => $event->user?->name,
+            'url' => route('vehicles.show', $vehicle->vin, false),
+        ]);
+
+        $this->notifier->toRoles($this->roles($event->transitionKey), $notification);
+    }
+
+    /**
+     * Resolve the notify roles for a transition key.
+     *
+     * @return array<int, string>
+     */
+    protected function roles(string $key): array
+    {
+        $roles = ['admin'];
+
         try {
-            if (! empty($event->notifyRoles) && Schema::hasColumn('users', 'role')) {
-                $query->whereIn('role', $event->notifyRoles);
-            }
-            if (Schema::hasColumn('users', 'active')) {
-                $query->where('active', 1);
+            $override = $this->settings->getTransitionPermissions()[$key]['notify'] ?? null;
+
+            if (is_array($override) && $override !== []) {
+                return array_values(array_unique(array_merge($roles, $override)));
             }
         } catch (\Throwable) {
-            // Fall through: notify whoever we can resolve.
+            // Fall through to the transition definition.
         }
 
         try {
-            $users = $query->get();
+            return array_values(array_unique(array_merge($roles, $this->registry->get($key)->notifyRoles())));
         } catch (\Throwable) {
-            return;
+            $fallback = config("fleet.transitions.{$key}.notify");
+
+            return array_values(array_unique(array_merge($roles, is_array($fallback) ? $fallback : [])));
         }
-
-        if ($users->isEmpty()) {
-            return;
-        }
-
-        $notification = new VehicleTransitionNotification(
-            vin: $event->vin,
-            action: $event->action,
-            actorName: $event->actorName,
-            fromStage: $event->fromStage,
-            toStage: $event->toStage,
-            note: $event->note,
-        );
-
-        // Queued: VehicleTransitionNotification implements ShouldQueue,
-        // so both database + mail channels are queued (mail queued).
-        Notification::send($users, $notification);
     }
 }

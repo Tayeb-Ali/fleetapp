@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Livewire\Admin;
 
 use App\Domain\Identity\Services\SettingsService;
+use App\Domain\Notification\Notifications\FleetNotification;
+use App\Domain\Notification\Services\FleetNotifier;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Validation\Rule;
@@ -60,7 +62,22 @@ class SettingsEditor extends Component
             'perm' => $this->perm,
         ]);
 
+        $this->notifyAdmins();
+
         session()->flash('status', __('app.saved'));
+    }
+
+    /** Best-effort admin notification for a settings change. */
+    protected function notifyAdmins(): void
+    {
+        try {
+            app(FleetNotifier::class)->toAdmins(new FleetNotification('system', 'settings_updated', [
+                'actor' => auth()->user()->name ?? null,
+                'url' => route('settings.index', absolute: false),
+            ]));
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     /**

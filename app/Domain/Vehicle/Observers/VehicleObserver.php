@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Vehicle\Observers;
 
+use App\Domain\Notification\Notifications\FleetNotification;
+use App\Domain\Notification\Services\FleetNotifier;
 use App\Domain\Vehicle\Enums\VehicleStage;
 use App\Domain\Vehicle\Models\Vehicle;
 use App\Domain\Vehicle\Models\VehicleActivity;
@@ -19,6 +21,8 @@ class VehicleObserver
             'to_stage' => $vehicle->stageValue(),
             'note' => 'Vehicle purchase registered',
         ]);
+
+        $this->notifyAdmins('created', $vehicle);
     }
 
     public function updated(Vehicle $vehicle): void
@@ -59,6 +63,8 @@ class VehicleObserver
             'to_stage' => null,
             'note' => 'Vehicle deleted',
         ]);
+
+        $this->notifyAdmins('deleted', $vehicle);
     }
 
     public function restored(Vehicle $vehicle): void
@@ -70,5 +76,30 @@ class VehicleObserver
             'to_stage' => $vehicle->stageValue(),
             'note' => 'Vehicle restored',
         ]);
+
+        $this->notifyAdmins('restored', $vehicle);
+    }
+
+    /**
+     * Notify admins about an interactive vehicle lifecycle change.
+     * Skipped for console/import writes where no user is authenticated.
+     */
+    protected function notifyAdmins(string $event, Vehicle $vehicle): void
+    {
+        if (! auth()->check()) {
+            return;
+        }
+
+        try {
+            app(FleetNotifier::class)->toAdmins(new FleetNotification('vehicle', $event, [
+                'vin' => $vehicle->vin,
+                'vehicle' => trim((string) ($vehicle->brand ?? '').' '.(string) ($vehicle->model ?? '')),
+                'to_stage' => $event === 'deleted' ? null : $vehicle->stageValue(),
+                'actor' => auth()->user()->name ?? null,
+                'url' => route('vehicles.show', $vehicle->vin, false),
+            ]));
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 }

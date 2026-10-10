@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin;
 
+use App\Domain\Notification\Notifications\FleetNotification;
+use App\Domain\Notification\Services\FleetNotifier;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Validation\Rule;
@@ -110,11 +112,13 @@ class UserManager extends Component
             }
             $target->save();
 
+            $this->notifyAdmins('updated', $target);
+
             session()->flash('status', __('users.updated'));
         } else {
             $this->authorize('create', User::class);
 
-            User::create([
+            $created = User::create([
                 'username' => strtolower(trim($data['username'])),
                 'name' => trim($data['name']),
                 'email' => ($data['email'] ?? '') !== '' ? trim($data['email']) : null,
@@ -122,6 +126,8 @@ class UserManager extends Component
                 'active' => true,
                 'password' => $data['password'],
             ]);
+
+            $this->notifyAdmins('created', $created, $created->role);
 
             session()->flash('status', __('users.created'));
         }
@@ -142,6 +148,8 @@ class UserManager extends Component
         $this->authorize('toggleActive', $target);
         $target->active = ! $target->active;
         $target->save();
+
+        $this->notifyAdmins($target->active ? 'enabled' : 'disabled', $target);
 
         session()->flash('status', $target->active ? __('users.enabled') : __('users.disabled_flash'));
     }
@@ -166,6 +174,8 @@ class UserManager extends Component
         $target->password = $this->newPassword;
         $target->save();
 
+        $this->notifyAdmins('password_reset', $target);
+
         $this->showPasswordModal = false;
         $this->passwordUserId = null;
         $this->newPassword = '';
@@ -179,6 +189,21 @@ class UserManager extends Component
         $this->showPasswordModal = false;
         $this->resetForm();
         $this->resetValidation();
+    }
+
+    /** Best-effort admin notification for account changes. */
+    protected function notifyAdmins(string $event, User $subject, ?string $role = null): void
+    {
+        try {
+            app(FleetNotifier::class)->toAdmins(new FleetNotification('user', $event, [
+                'subject_name' => $subject->name,
+                'subject_role' => $role ?? $subject->role,
+                'actor' => auth()->user()->name ?? null,
+                'url' => route('users.index', absolute: false),
+            ]));
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     protected function resetForm(): void

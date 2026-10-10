@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Livewire\Vehicles;
 
+use App\Domain\Vehicle\Events\VehicleTransitioned;
 use App\Domain\Vehicle\Models\Vehicle;
 use App\Domain\Vehicle\VehicleMeta;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Component;
@@ -84,6 +86,8 @@ class TransitionForm extends Component
             return null;
         }
 
+        $oldStage = null;
+
         try {
             if (! Schema::hasTable('vehicles')) {
                 $this->addError('data', __('vehicles.table_missing'));
@@ -112,6 +116,8 @@ class TransitionForm extends Component
 
             if (class_exists(Vehicle::class)) {
                 $model = Vehicle::class;
+                $currentStage = $model::query()->where('vin', $this->vin)->value('stage');
+                $oldStage = $currentStage instanceof \BackedEnum ? $currentStage->value : (string) $currentStage;
                 $fillable = (new $model)->getFillable();
                 if ($fillable !== []) {
                     $payload = array_filter($payload, fn ($k) => in_array($k, $fillable, true), ARRAY_FILTER_USE_KEY);
@@ -143,9 +149,37 @@ class TransitionForm extends Component
             return null;
         }
 
+        $this->dispatchTransitioned($oldStage, (string) ($def['to'] ?? ''));
+
         $this->dispatch('toast', __('app.saved'));
 
         return redirect()->route('vehicles.show', $this->vin);
+    }
+
+    /**
+     * Fire the domain transition event so audit/notification listeners run.
+     * Best-effort: never block the user flow if the event fails.
+     */
+    protected function dispatchTransitioned(?string $fromStage, string $toStage): void
+    {
+        try {
+            if (! class_exists(Vehicle::class) || ! Schema::hasTable('vehicles')) {
+                return;
+            }
+
+            $vehicle = Vehicle::query()->where('vin', $this->vin)->first();
+
+            if ($vehicle === null) {
+                return;
+            }
+
+            $actor = auth()->user();
+            $actor = $actor instanceof User ? $actor : null;
+
+            VehicleTransitioned::dispatch($vehicle, $this->transitionKey, (string) ($fromStage ?? ''), $toStage, $actor);
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     public function render()
