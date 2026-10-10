@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Reporting;
 
+use App\Domain\Reporting\ReportRegistry;
+use App\Domain\Reporting\Services\ReportPdfService;
 use App\Domain\Vehicle\Models\Vehicle;
 use App\Models\User;
+use ArPHP\I18N\Arabic;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -128,5 +131,63 @@ class ReportPagesTest extends TestCase
         $response->assertOk();
         $response->assertSee('Warehouse entry date');
         $response->assertSee('5 Oct 2026');
+    }
+
+    public function test_export_pdf_shapes_arabic_text(): void
+    {
+        app()->setLocale('ar');
+
+        $query = ReportRegistry::find('summary');
+        $this->assertNotNull($query);
+
+        $streams = $this->pdfContentStreams(
+            app(ReportPdfService::class)->render($query)->output()
+        );
+
+        // dompdf cannot shape Arabic itself; the service must pre-shape
+        // headers into visual-order presentation forms (same params as prod).
+        $shaped = (new Arabic)->utf8Glyphs('العدد', 500, false);
+        $this->assertStringContainsString(
+            mb_convert_encoding($shaped, 'UTF-16BE', 'UTF-8'),
+            $streams
+        );
+    }
+
+    public function test_export_pdf_keeps_english_text_unshaped(): void
+    {
+        app()->setLocale('en');
+
+        $query = ReportRegistry::find('summary');
+        $this->assertNotNull($query);
+
+        $streams = $this->pdfContentStreams(
+            app(ReportPdfService::class)->render($query)->output()
+        );
+
+        $this->assertStringContainsString(
+            mb_convert_encoding('Count', 'UTF-16BE', 'UTF-8'),
+            $streams
+        );
+
+        $shaped = (new Arabic)->utf8Glyphs('العدد', 500, false);
+        $this->assertStringNotContainsString(
+            mb_convert_encoding($shaped, 'UTF-16BE', 'UTF-8'),
+            $streams
+        );
+    }
+
+    /** Decompressed raw `stream…endstream` bodies of a PDF document. */
+    private function pdfContentStreams(string $pdf): string
+    {
+        preg_match_all("/stream\r?\n(.*?)endstream/s", $pdf, $matches);
+
+        $out = '';
+        foreach ($matches[1] as $raw) {
+            $raw = rtrim($raw, "\r\n");
+            $decoded = @gzuncompress($raw);
+            $out .= $decoded !== false ? $decoded : $raw;
+        }
+
+        return $out;
     }
 }

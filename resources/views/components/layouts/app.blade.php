@@ -9,6 +9,10 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @else
         <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            // Match the built CSS: class-based dark mode (.dark on <html>)
+            tailwind.config = { darkMode: 'class' };
+        </script>
     @endif
     @livewireStyles
     <script>
