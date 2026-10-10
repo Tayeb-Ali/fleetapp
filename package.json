@@ -1,7 +1,9 @@
 {
     "$schema": "https://www.schemastore.org/package.json",
-    "private": true,
- 
+    "type": "commonjs",
+    "engines": {
+        "node": "22.x"
+    },
     "scripts": {
         "build": "vite build",
         "dev": "vite"
