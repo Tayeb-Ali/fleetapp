@@ -22,7 +22,7 @@
 /storage/pail
 /storage/private
 /vendor
-database/*.sqlite
+# database/*.sqlite
 !database/.gitignore
 .phpunit.cache
 _ide_helper.php

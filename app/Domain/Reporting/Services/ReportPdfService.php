@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Reporting\Services;
 
+use App\Domain\Identity\Services\SettingsService;
 use App\Domain\Reporting\Contracts\ReportQuery;
 use ArPHP\I18N\Arabic;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -26,17 +27,33 @@ class ReportPdfService
 
     public function render(ReportQuery $query): \Barryvdh\DomPDF\PDF
     {
-        $columns = $query->columns();
+        $columns = array_values($query->columns());
+        $rows = array_map(
+            fn ($row) => array_values((array) $row),
+            $query->rows()
+        );
+
         $orientation = count($columns) > 8 ? 'landscape' : 'portrait';
 
+        // Every Arabic string is composed + pre-shaped here so the blade
+        // never prints raw logical-order Arabic (dompdf would render it
+        // disconnected). This covers title, headers, cells, meta, footer.
         return Pdf::loadView('reports.pdf', [
             'title' => $this->shape($query->title()),
-            'columns' => array_map($this->shape(...), $columns),
-            'rows' => array_map(
-                fn ($row) => array_map($this->shape(...), (array) $row),
-                $query->rows()
+            'columns' => array_map(
+                fn ($c) => $this->shapeHeader((string) $c, count($columns) > 8),
+                $columns
             ),
-            'generated' => $this->shape(now()->translatedFormat('d M Y H:i').' UTC'),
+            'rows' => array_map(
+                fn ($row) => array_map($this->shape(...), $row),
+                $rows
+            ),
+            'meta' => $this->shape($this->metaLine($rows)),
+            'footer' => $this->shape($this->companyName().' · '.$query->title()),
+            'empty' => $this->shape(__('app.no_results')),
+            'currency' => $this->currency(),
+            'compact' => count($columns) > 8,
+            'rtl' => app()->getLocale() === 'ar',
         ])
             ->setPaper('a4', $orientation)
             ->setOption('defaultFont', 'DejaVu Sans')
@@ -78,5 +95,56 @@ class ReportPdfService
     private function arabic(): Arabic
     {
         return $this->arabic ??= new Arabic;
+    }
+
+    private function metaLine(array $rows): string
+    {
+        return __('reports.generated').' '.now()->translatedFormat('d M Y H:i').' UTC | '.count($rows).' '.__('reports.records');
+    }
+
+    /**
+     * Shape a header label. In wide (compact) tables a multi-word Arabic
+     * header would wrap bottom-up once shaped, so stack it word-per-line
+     * (each line shaped separately); the blade joins them with <br> in
+     * reading order. Latin headers are left for dompdf to wrap (correct).
+     */
+    private function shapeHeader(string $value, bool $compact): string
+    {
+        if ($compact && preg_match('/\p{Arabic}/u', $value)) {
+            $words = preg_split('/\s+/u', trim($value));
+            if (is_array($words) && count($words) > 1) {
+                $lines = [];
+                foreach ($words as $word) {
+                    if ($word === '/' && $lines !== []) {
+                        $lines[count($lines) - 1] .= ' /';
+
+                        continue;
+                    }
+                    $lines[] = $word;
+                }
+
+                return implode("\n", array_map($this->shape(...), $lines));
+            }
+        }
+
+        return $this->shape($value);
+    }
+
+    private function companyName(): string
+    {
+        try {
+            return app(SettingsService::class)->getCompany();
+        } catch (\Throwable) {
+            return (string) config('app.name', 'Fleet');
+        }
+    }
+
+    private function currency(): string
+    {
+        try {
+            return app(SettingsService::class)->getCurrency();
+        } catch (\Throwable) {
+            return SettingsService::DEFAULT_CURRENCY;
+        }
     }
 }
