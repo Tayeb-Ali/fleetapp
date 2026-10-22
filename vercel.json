@@ -3,7 +3,27 @@
     "builds": [
         {
             "src": "api/index.php",
-            "use": "vercel-php@0.9.0"
+            "use": "vercel-php@0.9.0",
+            "config": {
+                "excludeFiles": [
+                    ".git/**",
+                    ".github/**",
+                    ".agents/**",
+                    ".opencode/**",
+                    ".qoder/**",
+                    ".vercel/**",
+                    ".vercelignore",
+                    ".env",
+                    ".env.*",
+                    "node_modules/**",
+                    "tests/**",
+                    "docs/**",
+                    "docker/**",
+                    "docker-compose.yml",
+                    "storage/logs/**",
+                    "storage/framework/**"
+                ]
+            }
         }
     ],
     "routes": [
@@ -23,6 +43,7 @@
         "APP_NAME": "fleet",
         "APP_ENV": "production",
         "APP_DEBUG": "false",
+        "APP_URL": "https://fleet.adaa.sd",
         "APP_LOCALE": "ar",
         "APP_FALLBACK_LOCALE": "en",
         "APP_FAKER_LOCALE": "ar_SA",

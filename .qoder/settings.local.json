@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat composer.json 2>/dev/null | head -60 && echo \"---ENGINE---\" && cat .vercelignore 2>/dev/null; cat vercel-env* 2>/dev/null; ls .vercel 2>/dev/null)",
+      "Bash(cat .vercel/project.json 2>/dev/null; echo \"---\"; ls -a .vercel; echo \"---NODE---\"; node -v; npm -v; echo \"---VERCEL CLI---\"; npx vercel --version 2>&1 | tail -3)",
+      "Bash(git log --oneline -12; echo \"---STATUS---\"; git status --short | head -30; echo \"---ENGINES---\"; grep -n -A6 '\"engines\"' composer.json package.json 2>/dev/null)",
+      "Bash(npx vercel whoami 2>&1 | tail -3; echo \"---LS---\"; npx vercel ls fleetapp 2>&1 | tail -20)",
+      "Bash(curl -s -o /tmp/vresp.html -w \"HTTP:%{http_code} time:%{time_total}s size:%{size_download}\\\\n\" -L \"https://fleetapp-e5brbgjx8-spamsd07-1104s-projects.vercel.app/\" ; echo \"---HEAD---\"; head -c 600 /tmp/vresp.html)",
+      "Bash(curl -s -D /tmp/h.txt -o /dev/null \"https://fleetapp-e5brbgjx8-spamsd07-1104s-projects.vercel.app/\"; cat /tmp/h.txt | head -25)",
+      "Bash(npx vercel inspect https://fleetapp-e5brbgjx8-spamsd07-1104s-projects.vercel.app 2>&1 | head -40)",
+      "Bash(npx vercel project --help 2>&1 | head -30)",
+      "Bash(npx vercel project protection fleetapp 2>&1 | tail -30)",
+      "Bash(curl -s -D /tmp/h2.txt -o /tmp/a.html \"https://fleetapp-alpha.vercel.app/\"; head -12 /tmp/h2.txt; echo \"---BODY---\"; head -c 400 /tmp/a.html)",
+      "Bash(curl -s -D /tmp/h3.txt -o /tmp/f.html -L \"https://fleet.adaa.sd/\"; echo \"===HEADERS===\"; head -20 /tmp/h3.txt; echo \"===BODY===\"; head -c 800 /tmp/f.html)",
+      "Bash(npx vercel logs --help 2>&1 | head -40)",
+      "Bash()",
+      "Bash(npx vercel logs -p fleetapp --since 60m -n 30 2>&1 | tail -50)",
+      "Bash(ls .vercel/builders 2>/dev/null; ls .vercel/output 2>/dev/null | head; cat .vercel/README.txt 2>/dev/null | head -20; echo \"---PROJECT SETTINGS---\"; npx vercel project inspect fleetapp 2>&1 | tail -40)"
+    ]
+  }
+}

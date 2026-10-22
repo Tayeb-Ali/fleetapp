@@ -22,12 +22,48 @@ if ($uri !== '/' && is_file($file = __DIR__.'/../public'.$uri)) {
     return;
 }
 
-// Ensure fallback APP_KEY exists so application never crashes on missing key
-if (! getenv('APP_KEY') && ! isset($_SERVER['APP_KEY']) && ! isset($_ENV['APP_KEY'])) {
-    $fallbackKey = 'base64:UUGl5arvZt/1FYKTC1nrKJzyjCtQ15m8aOvPAq5yBQI=';
-    putenv("APP_KEY={$fallbackKey}");
-    $_ENV['APP_KEY'] = $fallbackKey;
-    $_SERVER['APP_KEY'] = $fallbackKey;
+/*
+ * Serverless defaults. Vercel never writes vercel.json `env` into the function's
+ * runtime environment, so the values the app needs are applied here unless the
+ * project already provides them as real environment variables. Everything is
+ * written with putenv() before Composer's autoloader runs, so Dotenv leaves the
+ * platform-provided values untouched.
+ */
+$runtimeDefaults = [
+    'APP_ENV' => 'production',
+    'APP_DEBUG' => 'false',
+    'APP_NAME' => 'fleet',
+    'APP_URL' => 'https://fleet.adaa.sd',
+    'APP_LOCALE' => 'ar',
+    'APP_FALLBACK_LOCALE' => 'en',
+    'APP_FAKER_LOCALE' => 'ar_SA',
+    'LOG_CHANNEL' => 'stderr',
+    'LOG_LEVEL' => 'error',
+    'SESSION_DRIVER' => 'cookie',
+    'CACHE_STORE' => 'array',
+    'QUEUE_CONNECTION' => 'sync',
+    'FILESYSTEM_DISK' => 'local',
+    'ASSET_URL' => '/',
+    'DB_CONNECTION' => 'sqlite',
+    // Only /tmp is writable, so the shipped database becomes the instance's working copy.
+    'DB_DATABASE' => '/tmp/database.sqlite',
+    'DOMPDF_FONT_DIR' => '/tmp/fonts',
+    'DOMPDF_FONT_CACHE' => '/tmp/fonts',
+    'VIEW_COMPILED_PATH' => '/tmp/views',
+    'APP_CONFIG_CACHE' => '/tmp/config.php',
+    'APP_EVENTS_CACHE' => '/tmp/events.php',
+    'APP_PACKAGES_CACHE' => '/tmp/packages.php',
+    'APP_ROUTES_CACHE' => '/tmp/routes.php',
+    'APP_SERVICES_CACHE' => '/tmp/services.php',
+    'APP_KEY' => 'base64:UUGl5arvZt/1FYKTC1nrKJzyjCtQ15m8aOvPAq5yBQI=',
+];
+
+foreach ($runtimeDefaults as $key => $value) {
+    if (getenv($key) === false && ! isset($_SERVER[$key]) && ! isset($_ENV[$key])) {
+        putenv("{$key}={$value}");
+        $_ENV[$key] = $value;
+        $_SERVER[$key] = $value;
+    }
 }
 
 require __DIR__.'/../vendor/autoload.php';
