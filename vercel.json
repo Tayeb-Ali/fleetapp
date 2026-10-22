@@ -20,7 +20,7 @@
         }
     ],
     "env": {
-        "APP_NAME": "Fleet",
+        "APP_NAME": "fleet",
         "APP_ENV": "production",
         "APP_DEBUG": "false",
         "APP_LOCALE": "ar",
