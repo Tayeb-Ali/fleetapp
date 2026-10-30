@@ -51,4 +51,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/users', fn () => view('users.index'))->name('users.index');
     Route::get('/audit', fn () => view('audit.index'))->name('audit.index');
     Route::get('/settings', fn () => view('settings.index'))->name('settings.index');
+    Route::get('/settings/currencies', fn () => view('settings.currencies'))->name('settings.currencies');
+    Route::get('/settings/exchange-rates', fn () => view('settings.exchange-rates'))->name('settings.exchange-rates');
 });

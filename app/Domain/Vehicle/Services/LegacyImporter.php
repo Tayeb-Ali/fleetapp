@@ -17,16 +17,46 @@ use Illuminate\Support\Facades\Schema;
  */
 class LegacyImporter
 {
-    /** OLD status => new stage (legacy server.js OLD map). */
+    /** OLD status => new stage (legacy server.js OLD map + V3 tracker). */
     public static function statusMap(): array
     {
         return [
             'Not shipped' => 'purchased',
+            'Not Shipped Yet' => 'purchased',
             'Yet to be received' => 'shipped',
+            'Shipped / Under Processing' => 'shipped',
             'Ready for Sale' => 'instock',
+            'Ready for delivery from Sawakin' => 'instock',
+            'At Free Zone, Ready For Sale' => 'instock',
             'Sold' => 'sold',
+            'Sold, client to complete processing' => 'sold',
             'Sold & Delivered' => 'delivered',
         ];
+    }
+
+    /** Resolve a tracker status (case/space tolerant) to a stage. */
+    public static function stageForStatus(?string $status): ?string
+    {
+        $status = strtolower(trim((string) $status));
+        if ($status === '') {
+            return null;
+        }
+
+        foreach (self::statusMap() as $label => $stage) {
+            if (strtolower(trim($label)) === $status) {
+                return $stage;
+            }
+        }
+
+        // Contains fallback for statuses with extra qualifiers.
+        foreach (self::statusMap() as $label => $stage) {
+            $needle = strtolower(trim($label));
+            if ($needle !== '' && str_contains($status, $needle)) {
+                return $stage;
+            }
+        }
+
+        return null;
     }
 
     public static function validStages(): array

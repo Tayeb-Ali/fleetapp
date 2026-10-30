@@ -7,8 +7,16 @@ namespace App\Domain\Reporting\Queries;
 use App\Domain\Reporting\Contracts\ReportQuery;
 use App\Domain\Reporting\Queries\Concerns\FetchesVehicles;
 use App\Domain\Reporting\Queries\Concerns\LocalizesReport;
+use App\Domain\Vehicle\Models\VehicleAttachment;
+use Illuminate\Support\Facades\Schema;
 
-/** Legacy REP.quality (lines 81-85) — data quality check. */
+/**
+ * Legacy REP.quality (lines 81-85) — data quality check.
+ *
+ * Besides the legacy date/stage checks this report flags financial gaps:
+ * missing FX rates, missing purchase/shipping/landed/sale values and
+ * financial operations without a proof document.
+ */
 class QualityCheckReport implements ReportQuery
 {
     use FetchesVehicles;
@@ -33,11 +41,16 @@ class QualityCheckReport implements ReportQuery
     {
         $today = date('Y-m-d');
         $pastShipping = ['shipped', 'arrived', 'clearing', 'cleared', 'instock', 'sold', 'delivered'];
+        $pastClearance = ['cleared', 'instock', 'sold', 'delivered'];
+        $sold = ['sold', 'delivered'];
+
+        $proofs = $this->proofCategories();
         $rows = [];
 
-        foreach ($this->vehicles() as $v) {
+        foreach ($this->vehiclesWithCosts() as $v) {
             $issues = [];
             $stage = $v['stage'] ?? '';
+            $vin = (string) ($v['vin'] ?? '');
 
             if (($v['ship'] ?? '') !== '' && $v['ship'] > $today) {
                 $issues[] = 'shipping_future';
@@ -70,11 +83,80 @@ class QualityCheckReport implements ReportQuery
                 $issues[] = 'overpaid';
             }
 
-            foreach ($issues as $code) {
-                $rows[] = [$v['vin'] ?? '', $v['model'] ?? '', $this->stageLabel($stage), $this->issueLabel($code)];
+            // Financial completeness.
+            if (($v['purchase_native'] ?? null) === null && in_array($stage, $pastShipping, true)) {
+                $issues[] = 'missing_purchase_cost';
+            }
+            if (($v['shipping_native'] ?? null) === null && in_array($stage, ['arrived', 'clearing', 'cleared', 'instock', 'sold', 'delivered'], true)) {
+                $issues[] = 'missing_shipping_cost';
+            }
+            if (($v['landed_base'] ?? null) === null && in_array($stage, $pastClearance, true)) {
+                $issues[] = 'missing_landed_cost';
+            }
+            if (($v['sale_native'] ?? null) === null && in_array($stage, $sold, true)) {
+                $issues[] = 'missing_sale_value';
+            }
+            if (($v['mod'] ?? '') !== '' && ! in_array(strtolower((string) $v['mod']), ['yes', 'no'], true)) {
+                $issues[] = 'invalid_modification_flag';
+            }
+            if (($v['modification_base'] ?? null) === null && in_array(strtolower((string) ($v['mod'] ?? '')), ['yes'], true)) {
+                $issues[] = 'missing_modification_cost';
+            }
+
+            foreach ((array) ($v['fx_missing'] ?? []) as $component) {
+                $issues[] = 'missing_fx_'.$component;
+            }
+
+            // Every financial operation should carry a proof document.
+            $vinProofs = $proofs[$vin] ?? [];
+            if (($v['purchase_native'] ?? null) !== null && ! in_array('purchase', $vinProofs, true)) {
+                $issues[] = 'missing_purchase_proof';
+            }
+            if (($v['shipping_native'] ?? null) !== null && ! in_array('shipping', $vinProofs, true)) {
+                $issues[] = 'missing_shipping_proof';
+            }
+            if (($v['landed_base'] ?? null) !== null && ! in_array('landed', $vinProofs, true)) {
+                $issues[] = 'missing_landed_proof';
+            }
+            if (($v['modification_base'] ?? null) !== null && ! in_array('modification', $vinProofs, true)) {
+                $issues[] = 'missing_modification_proof';
+            }
+            if (($v['sale_native'] ?? null) !== null && ! in_array('sale', $vinProofs, true)) {
+                $issues[] = 'missing_sale_proof';
+            }
+            if ((float) ($v['paid'] ?? 0) > 0 && ! in_array('payment', $vinProofs, true)) {
+                $issues[] = 'missing_payment_proof';
+            }
+
+            foreach (array_values(array_unique($issues)) as $code) {
+                $rows[] = [$vin, $v['model'] ?? '', $this->stageLabel($stage), $this->issueLabel($code)];
             }
         }
 
         return $rows;
+    }
+
+    /**
+     * Uploaded proof categories per VIN: vin => [category, ...].
+     *
+     * @return array<string, array<int, string>>
+     */
+    protected function proofCategories(): array
+    {
+        try {
+            if (! Schema::hasTable('vehicle_attachments') || ! Schema::hasColumn('vehicle_attachments', 'category')) {
+                return [];
+            }
+
+            $out = [];
+            foreach (VehicleAttachment::query()->get(['vin', 'category']) as $attachment) {
+                $value = (string) $attachment->getRawOriginal('category');
+                $out[(string) $attachment->vin][] = $value;
+            }
+
+            return $out;
+        } catch (\Throwable) {
+            return [];
+        }
     }
 }

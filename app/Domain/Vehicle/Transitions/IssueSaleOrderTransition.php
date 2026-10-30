@@ -30,7 +30,7 @@ class IssueSaleOrderTransition extends AbstractTransition
 
     public function fields(): array
     {
-        return ['sale_order_no', 'buyer_name', 'buyer_phone', 'sale_price', 'amount_paid', 'sold_at'];
+        return ['sale_order_no', 'buyer_name', 'buyer_phone', 'sale_price', 'sale_currency', 'sale_fx_rate', 'amount_paid', 'sold_at'];
     }
 
     public function requiredFields(): array

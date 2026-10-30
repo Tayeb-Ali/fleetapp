@@ -6,6 +6,7 @@ namespace App\Domain\Reporting;
 
 use App\Domain\Reporting\Contracts\ReportQuery;
 use App\Domain\Reporting\Queries\AvailableReport;
+use App\Domain\Reporting\Queries\CostingReport;
 use App\Domain\Reporting\Queries\CustomsReport;
 use App\Domain\Reporting\Queries\FullReport;
 use App\Domain\Reporting\Queries\OutstandingReport;
@@ -32,6 +33,7 @@ class ReportRegistry
             'full' => FullReport::class,
             'profit' => ProfitReport::class,
             'outstanding' => OutstandingReport::class,
+            'costing' => CostingReport::class,
             'quality' => QualityCheckReport::class,
         ];
     }

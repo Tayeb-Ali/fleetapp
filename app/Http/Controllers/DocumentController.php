@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Domain\Identity\Services\SettingsService;
 use App\Domain\Vehicle\Models\Vehicle;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
@@ -20,14 +21,10 @@ class DocumentController extends Controller
     protected function company(): string
     {
         try {
-            if (Schema::hasTable('settings')) {
-                $raw = DB::table('settings')->where('k', 's')->value('v');
-                if ($raw) {
-                    $data = json_decode((string) $raw, true);
-                    if (! empty($data['company'])) {
-                        return (string) $data['company'];
-                    }
-                }
+            $company = trim(app(SettingsService::class)->getCompany());
+
+            if ($company !== '') {
+                return $company;
             }
         } catch (\Throwable) {
             // fall through to config default
@@ -39,20 +36,16 @@ class DocumentController extends Controller
     protected function currency(): string
     {
         try {
-            if (Schema::hasTable('settings')) {
-                $raw = DB::table('settings')->where('k', 's')->value('v');
-                if ($raw) {
-                    $data = json_decode((string) $raw, true);
-                    if (! empty($data['currency'])) {
-                        return (string) $data['currency'];
-                    }
-                }
+            $currency = trim(app(SettingsService::class)->getCurrency());
+
+            if ($currency !== '') {
+                return $currency;
             }
         } catch (\Throwable) {
             // fall through to config default
         }
 
-        return (string) config('fleet.currency', 'USD');
+        return (string) config('fleet.currency', SettingsService::DEFAULT_CURRENCY);
     }
 
     protected function findVehicle(string $vin): ?array

@@ -8,7 +8,7 @@ use App\Domain\Reporting\Contracts\ReportQuery;
 use App\Domain\Reporting\Queries\Concerns\FetchesVehicles;
 use App\Domain\Reporting\Queries\Concerns\LocalizesReport;
 
-/** Legacy REP.sales — grouped by buyer_name (client) with totals. */
+/** Legacy REP.sales — grouped by buyer_name (client) with base-currency totals. */
 class SalesByBuyerReport implements ReportQuery
 {
     use FetchesVehicles;
@@ -39,7 +39,7 @@ class SalesByBuyerReport implements ReportQuery
     public function rows(): array
     {
         $groups = [];
-        foreach ($this->vehicles() as $v) {
+        foreach ($this->vehiclesWithCosts() as $v) {
             if (($v['client'] ?? '') === '') {
                 continue;
             }
@@ -48,11 +48,21 @@ class SalesByBuyerReport implements ReportQuery
 
         $rows = [];
         foreach ($groups as $client => $a) {
+            $paidBase = 0.0;
+            foreach ($a as $v) {
+                $paid = (float) ($v['paid'] ?? 0);
+                $rate = $v['sale_rate'] ?? null;
+
+                if ($paid > 0 && $rate !== null && (float) $rate > 0) {
+                    $paidBase += $paid / (float) $rate;
+                }
+            }
+
             $rows[] = [
                 $client,
                 count($a),
-                $this->sum($a, 'price'),
-                $this->sum($a, 'paid'),
+                $this->sum($a, 'sale_base'),
+                $paidBase,
                 count(array_filter($a, fn ($v) => ($v['stage'] ?? null) === 'delivered')),
                 count(array_filter($a, fn ($v) => ($v['stage'] ?? null) === 'sold')),
             ];

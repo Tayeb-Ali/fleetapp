@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Vehicle\Models;
 
 use App\Domain\Vehicle\Enums\VehicleStage;
+use App\Domain\Vehicle\Services\VehicleCostService;
 use Database\Factories\VehicleFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -59,8 +60,16 @@ class Vehicle extends Model
             'sold_at' => 'date',
             'delivered_at' => 'date',
             'cost' => 'decimal:2',
-            'duty' => 'decimal:2',
+            'purchase_fx_rate' => 'decimal:6',
+            'purchase_base_amount' => 'decimal:2',
+            'shipping_cost' => 'decimal:2',
+            'shipping_fx_rate' => 'decimal:6',
+            'shipping_base_amount' => 'decimal:2',
+            'landed_cost' => 'decimal:2',
+            'modification_cost' => 'decimal:2',
             'sale_price' => 'decimal:2',
+            'sale_fx_rate' => 'decimal:6',
+            'sale_base_amount' => 'decimal:2',
             'amount_paid' => 'decimal:2',
         ];
     }
@@ -74,6 +83,7 @@ class Vehicle extends Model
         'arr' => 'arrived_at',
         'cust_no' => 'customs_no',
         'cust_date' => 'customs_date',
+        'duty' => 'landed_cost',
         'loc' => 'warehouse_location',
         'in_date' => 'warehouse_in_at',
         'ord_no' => 'sale_order_no',
@@ -155,6 +165,12 @@ class Vehicle extends Model
         return $this->hasMany(VehicleActivity::class, 'vin', 'vin');
     }
 
+    /** @return HasMany<VehicleAttachment, $this> */
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(VehicleAttachment::class, 'vin', 'vin');
+    }
+
     /** @param Builder<$this> $query */
     public function scopeByStage(Builder $query, VehicleStage|string $stage): Builder
     {
@@ -190,14 +206,30 @@ class Vehicle extends Model
         return (float) ($this->sale_price ?? 0) - (float) ($this->amount_paid ?? 0);
     }
 
+    /**
+     * Total cost in the base currency (purchase + shipping + landed + modification).
+     */
     public function getTotalCostAttribute(): float
     {
-        return (float) ($this->cost ?? 0) + (float) ($this->duty ?? 0);
+        return app(VehicleCostService::class)->for($this)->totalCost;
     }
 
-    public function getProfitAttribute(): float
+    /**
+     * Profit in the base currency, or null when the sale FX rate is missing.
+     */
+    public function getProfitAttribute(): ?float
     {
-        return (float) ($this->sale_price ?? 0) - $this->total_cost;
+        return app(VehicleCostService::class)->for($this)->profit;
+    }
+
+    public function isModified(): bool
+    {
+        return in_array(strtolower(trim((string) ($this->mod ?? ''))), ['yes', 'y', '1', 'true'], true);
+    }
+
+    public function getIsModifiedAttribute(): bool
+    {
+        return $this->isModified();
     }
 
     public function stageValue(): string

@@ -30,7 +30,7 @@ class CompleteClearanceTransition extends AbstractTransition
 
     public function fields(): array
     {
-        return ['customs_no', 'customs_date', 'duty'];
+        return ['customs_no', 'customs_date', 'landed_cost'];
     }
 
     public function requiredFields(): array

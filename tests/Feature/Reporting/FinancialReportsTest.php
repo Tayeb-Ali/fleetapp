@@ -23,7 +23,7 @@ class FinancialReportsTest extends TestCase
 
         $this->assertArrayHasKey('profit', $map);
         $this->assertArrayHasKey('outstanding', $map);
-        $this->assertSame(10, count($map));
+        $this->assertSame(11, count($map));
     }
 
     public function test_profit_report_computes_totals(): void
@@ -35,14 +35,20 @@ class FinancialReportsTest extends TestCase
         $report = app(ProfitReport::class);
         $rows = $report->rows();
 
-        $this->assertSame(['Chassis No. (VIN)', 'Model', 'Buyer / Organization', 'Purchase price', 'Customs duty', 'Total cost', 'Sale price', 'Profit'], $report->columns());
+        $this->assertSame([
+            'Chassis No. (VIN)', 'Model', 'Buyer / Organization',
+            'Purchase price', 'Shipping cost', 'Landed cost (customs + port)',
+            'Modification cost', 'Total cost', 'Sale price', 'Profit',
+        ], $report->columns());
         $this->assertCount(2, $rows);
 
         // Sorted profit desc: +8500 first, -1500 last (money is formatted).
         $this->assertSame('VIN-P1', $rows[0][0]);
-        $this->assertSame('8,500.00 USD', $rows[0][7]);
+        $this->assertSame('21,500.00 USD', $rows[0][7]);
+        $this->assertSame('8,500.00 USD', $rows[0][9]);
         $this->assertSame('VIN-P2', $rows[1][0]);
-        $this->assertSame('-1,500.00 USD', $rows[1][7]);
+        $this->assertSame('10,500.00 USD', $rows[1][7]);
+        $this->assertSame('-1,500.00 USD', $rows[1][9]);
     }
 
     public function test_outstanding_report_only_positive_balances(): void
@@ -81,7 +87,11 @@ class FinancialReportsTest extends TestCase
         app()->setLocale('ar');
 
         $this->assertSame('ملخص مراحل المركبات', app(SummaryReport::class)->title());
-        $this->assertSame(['رقم الشاسيه', 'الموديل', 'المشتري / الجهة', 'سعر الشراء', 'الرسوم الجمركية', 'إجمالي التكلفة', 'سعر البيع', 'الربح'], app(ProfitReport::class)->columns());
+        $this->assertSame([
+            'رقم الشاسيه', 'الموديل', 'المشتري / الجهة',
+            'سعر الشراء', 'تكلفة الشحن', 'التكلفة الواصلة (الجمارك + الميناء)',
+            'تكلفة التعديل', 'إجمالي التكلفة', 'سعر البيع', 'الربح',
+        ], app(ProfitReport::class)->columns());
 
         Vehicle::factory()->create(['vin' => 'VIN-QA1', 'model' => 'HILUX', 'stage' => 'sold', 'buyer_name' => 'Buyer A', 'sale_price' => null, 'amount_paid' => null]);
         $rows = app(QualityCheckReport::class)->rows();

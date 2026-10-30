@@ -4,32 +4,71 @@ declare(strict_types=1);
 
 namespace App\Livewire\Vehicles;
 
-use App\Domain\Vehicle\Models\Vehicle;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use App\Domain\Finance\Services\CurrencyService;
+use App\Domain\Finance\Services\ExchangeRateService;
+use App\Domain\Vehicle\Actions\AttachFileAction;
+use App\Domain\Vehicle\Actions\RegisterVehicleAction;
+use App\Domain\Vehicle\Enums\AttachmentCategory;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
-/** Create form (purchase registration). */
+/** Create form (purchase registration + purchase proof). */
 class RegisterVehicle extends Component
 {
+    use WithFileUploads;
+
     public array $data = [];
+
+    /** @var array<int, mixed> */
+    public array $proofs = [];
 
     /** @var array<string, string> */
     protected array $messages = [];
+
+    /**
+     * Rates the component filled in itself, keyed by data field.
+     *
+     * @var array<string, string>
+     */
+    protected array $autoRates = [];
 
     public function mount(): void
     {
         $fields = config('fleet.create_fields', ['brand', 'model', 'vin', 'fuel', 'pdate', 'supplier', 'cost', 'bl', 'voy', 'pol', 'pod', 'ship', 'arr', 'remarks']);
         $this->data = array_fill_keys($fields, '');
+
+        $base = app(CurrencyService::class)->base();
+
+        foreach (['purchase_currency' => $base, 'purchase_fx_rate' => '1', 'mod' => 'No'] as $key => $value) {
+            if (array_key_exists($key, $this->data)) {
+                $this->data[$key] = $value;
+            }
+        }
     }
 
-    public function save(): mixed
+    public function updated(string $name, mixed $value = null): void
+    {
+        if ($name === 'data.mod' && $value !== 'Yes') {
+            $this->data['modification_cost'] = '';
+        }
+
+        if ($name === 'data.purchase_currency') {
+            $this->prefillPurchaseRate(true);
+        } elseif ($name === 'data.pdate') {
+            $this->prefillPurchaseRate();
+        }
+    }
+
+    public function save(RegisterVehicleAction $action): mixed
     {
         $required = config('fleet.create_required', ['model', 'vin']);
 
         $this->validate([
             'data.model' => in_array('model', $required, true) ? 'required|string|max:300' : 'nullable|string|max:300',
             'data.vin' => in_array('vin', $required, true) ? 'required|string|max:300' : 'nullable|string|max:300',
+            'proofs' => 'array|max:5',
+            'proofs.*' => 'file|max:6144|mimes:pdf,png,jpg,jpeg,webp',
         ]);
 
         $vin = trim((string) ($this->data['vin'] ?? ''));
@@ -40,65 +79,70 @@ class RegisterVehicle extends Component
         }
 
         $payload = [];
-        foreach ($this->data as $k => $v) {
-            // Empty strings crash decimal/date casts on read — store null.
-            $clean = trim((string) $v);
-            $payload[$k] = $clean === '' ? null : $clean;
+        foreach ($this->data as $key => $value) {
+            $clean = trim((string) $value);
+            $payload[$key] = $clean === '' ? null : $clean;
         }
-        $payload['stage'] = ! empty($payload['bl']) ? 'shipped' : 'purchased';
+
+        if (($payload['mod'] ?? 'No') !== 'Yes') {
+            $payload['modification_cost'] = null;
+        }
 
         try {
-            if (! Schema::hasTable('vehicles')) {
-                $this->addError('data.vin', __('vehicles.table_missing'));
-
-                return null;
-            }
-
-            // Translate legacy short keys (pdate, voy, ship, ...) to the
-            // canonical Vehicle columns, then keep only columns that exist.
-            if (class_exists(Vehicle::class)) {
-                $payload = Vehicle::translateLegacyKeys($payload);
-            }
-            $columns = Schema::getColumnListing('vehicles');
-            $payload = array_filter($payload, fn ($k) => in_array($k, $columns, true), ARRAY_FILTER_USE_KEY);
-
-            if (class_exists(Vehicle::class)) {
-                $model = Vehicle::class;
-                if ($model::query()->where('vin', $vin)->exists()) {
-                    $this->addError('data.vin', __('vehicles.already_registered'));
-
-                    return null;
+            $vehicle = $action->execute($payload, auth()->user());
+        } catch (ValidationException $e) {
+            foreach ($e->errors() as $key => $messages) {
+                foreach ($messages as $message) {
+                    $this->addError('data.'.$key, $message);
                 }
-                $fillable = (new $model)->getFillable();
-                if ($fillable !== []) {
-                    $payload = array_filter($payload, fn ($k) => in_array($k, $fillable, true), ARRAY_FILTER_USE_KEY);
-                    $payload['vin'] = $vin;
-                }
-                $model::query()->create($payload);
-            } else {
-                if (DB::table('vehicles')->where('vin', $vin)->exists()) {
-                    $this->addError('data.vin', __('vehicles.already_registered'));
-
-                    return null;
-                }
-                DB::table('vehicles')->insert($payload + ['vin' => $vin]);
             }
-        } catch (\Throwable $e) {
-            report($e);
-            $this->addError('data.vin', __('vehicles.table_missing'));
 
             return null;
         }
 
-        return redirect()->route('vehicles.show', $vin);
+        $attach = app(AttachFileAction::class);
+        foreach ($this->proofs as $file) {
+            try {
+                $attach->execute($vehicle->vin, $file, auth()->id(), AttachmentCategory::Purchase);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        return redirect()->route('vehicles.show', $vehicle->vin);
     }
 
-    public function render()
+    protected function prefillPurchaseRate(bool $force = false): void
+    {
+        $currencies = app(CurrencyService::class);
+        $currency = strtoupper(trim((string) ($this->data['purchase_currency'] ?? ''))) ?: $currencies->base();
+
+        $current = trim((string) ($this->data['purchase_fx_rate'] ?? ''));
+        if (! $force && $current !== '' && $current !== ($this->autoRates['purchase_fx_rate'] ?? null)) {
+            return;
+        }
+
+        if ($currency === $currencies->base()) {
+            $this->data['purchase_fx_rate'] = '1';
+            $this->autoRates['purchase_fx_rate'] = '1';
+
+            return;
+        }
+
+        $rate = app(ExchangeRateService::class)->rateForDate($currency, $this->data['pdate'] ?? null);
+        $this->data['purchase_fx_rate'] = $rate !== null ? (string) $rate : '';
+        $this->autoRates['purchase_fx_rate'] = $this->data['purchase_fx_rate'];
+    }
+
+    public function render(CurrencyService $currencies)
     {
         return view('livewire.vehicles.register-vehicle', [
             'fields' => config('fleet.create_fields', array_keys($this->data)),
             'required' => config('fleet.create_required', ['model', 'vin']),
             'labels' => config('fleet.fields', []),
+            'currencyOptions' => $currencies->options(true, array_filter([
+                $this->data['purchase_currency'] ?? null,
+            ])),
         ]);
     }
 }

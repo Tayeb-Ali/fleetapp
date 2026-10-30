@@ -6,6 +6,7 @@ namespace App\Domain\Vehicle\Actions;
 
 use App\Domain\Vehicle\Enums\VehicleStage;
 use App\Domain\Vehicle\Models\Vehicle;
+use App\Domain\Vehicle\Services\FinancialFieldsResolver;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -24,6 +25,16 @@ class RegisterVehicleAction
             'purchased_at' => 'nullable|date',
             'supplier' => 'nullable|string|max:500',
             'cost' => 'nullable|numeric|min:0',
+            'purchase_currency' => 'nullable|string|max:8',
+            'purchase_fx_rate' => 'nullable|numeric|min:0.000001',
+            'shipping_cost' => 'nullable|numeric|min:0',
+            'shipping_currency' => 'nullable|string|max:8',
+            'shipping_fx_rate' => 'nullable|numeric|min:0.000001',
+            'landed_cost' => 'nullable|numeric|min:0',
+            'modification_cost' => 'nullable|numeric|min:0',
+            'sale_price' => 'nullable|numeric|min:0',
+            'sale_currency' => 'nullable|string|max:8',
+            'sale_fx_rate' => 'nullable|numeric|min:0.000001',
             'bl' => 'nullable|string|max:255',
             'voyage_no' => 'nullable|string|max:255',
             'pol' => 'nullable|string|max:255',
@@ -52,6 +63,9 @@ class RegisterVehicleAction
                 $validated[$key] = null;
             }
         }
+
+        // Currency / FX rate / converted base amounts (rate snapshot wins).
+        $validated = app(FinancialFieldsResolver::class)->apply($validated);
 
         // Legacy line 154: stage auto — shipped when B/L present, else purchased.
         $validated['stage'] = ! empty($validated['bl'] ?? $data['bl'] ?? null)

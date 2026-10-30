@@ -41,4 +41,22 @@ return [
     'already_registered' => 'رقم الشاسيه مسجل مسبقاً.',
     'unknown_transition' => 'إجراء غير معروف.',
     'stage_unavailable' => 'هذا الإجراء غير متاح للمرحلة الحالية.',
+
+    // Financial fields (base UI keys).
+    'purchased_at' => 'تاريخ الشراء',
+    'purchase_currency' => 'عملة الشراء',
+    'purchase_fx_rate' => 'سعر صرف الشراء',
+    'shipping_cost' => 'تكلفة الشحن',
+    'shipping_currency' => 'عملة الشحن',
+    'shipping_fx_rate' => 'سعر صرف الشحن',
+    'landed_cost' => 'التكلفة الواصلة (الجمارك + الميناء)',
+    'modification_cost' => 'تكلفة التعديل',
+    'shipped_at' => 'تاريخ الشحن',
+    'sold_at' => 'تاريخ البيع',
+    'sale_price' => 'سعر البيع',
+    'sale_currency' => 'عملة البيع',
+    'sale_fx_rate' => 'سعر صرف البيع',
+    'amount_paid' => 'المبلغ المدفوع',
+    'customs_no' => 'رقم البيان الجمركي',
+    'warehouse_location' => 'موقع المخزن',
 ];

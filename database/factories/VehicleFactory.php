@@ -50,7 +50,6 @@ class VehicleFactory extends Factory
             'arrived_at' => null,
             'customs_no' => null,
             'customs_date' => null,
-            'duty' => null,
             'warehouse_location' => null,
             'warehouse_in_at' => null,
             'sale_order_no' => null,

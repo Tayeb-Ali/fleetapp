@@ -8,7 +8,7 @@ use App\Domain\Reporting\Contracts\ReportQuery;
 use App\Domain\Reporting\Queries\Concerns\FetchesVehicles;
 use App\Domain\Reporting\Queries\Concerns\LocalizesReport;
 
-/** Outstanding balances: sale_price - amount_paid > 0. */
+/** Outstanding balances in the base currency: sale base - paid base > 0. */
 class OutstandingReport implements ReportQuery
 {
     use FetchesVehicles;
@@ -40,10 +40,24 @@ class OutstandingReport implements ReportQuery
     public function rows(): array
     {
         $rows = [];
-        foreach ($this->vehicles() as $v) {
-            $price = (float) ($v['price'] ?? 0);
+        foreach ($this->vehiclesWithCosts() as $v) {
+            $saleBase = $v['sale_base'] ?? null;
+            if ($saleBase === null) {
+                continue;
+            }
+
             $paid = (float) ($v['paid'] ?? 0);
-            $balance = $price - $paid;
+            $rate = $v['sale_rate'] ?? null;
+            $paidBase = 0.0;
+
+            if ($paid > 0) {
+                if ($rate === null || (float) $rate <= 0) {
+                    continue;
+                }
+                $paidBase = $paid / (float) $rate;
+            }
+
+            $balance = (float) $saleBase - $paidBase;
 
             if ($balance <= 0) {
                 continue;
@@ -54,8 +68,8 @@ class OutstandingReport implements ReportQuery
                 $v['client'] ?? '',
                 $v['phone'] ?? '',
                 $v['ord_no'] ?? '',
-                $price,
-                $paid,
+                (float) $saleBase,
+                $paidBase,
                 $balance,
             ];
         }

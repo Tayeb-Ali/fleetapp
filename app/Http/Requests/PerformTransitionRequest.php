@@ -45,7 +45,9 @@ class PerformTransitionRequest extends FormRequest
             $rules[$field] = match ($field) {
                 'purchased_at', 'shipped_at', 'arrived_at', 'customs_date',
                 'warehouse_in_at', 'sold_at', 'delivered_at' => "{$prefix}|date",
-                'cost', 'duty', 'sale_price', 'amount_paid' => "{$prefix}|numeric|min:0",
+                'cost', 'shipping_cost', 'landed_cost', 'duty', 'modification_cost',
+                'sale_price', 'amount_paid', 'purchase_fx_rate', 'shipping_fx_rate', 'sale_fx_rate' => "{$prefix}|numeric|min:0",
+                'purchase_currency', 'shipping_currency', 'sale_currency' => "{$prefix}|string|max:8",
                 default => "{$prefix}|string|max:500",
             };
         }

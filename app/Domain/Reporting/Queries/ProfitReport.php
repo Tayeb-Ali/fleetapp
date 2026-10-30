@@ -8,7 +8,12 @@ use App\Domain\Reporting\Contracts\ReportQuery;
 use App\Domain\Reporting\Queries\Concerns\FetchesVehicles;
 use App\Domain\Reporting\Queries\Concerns\LocalizesReport;
 
-/** Profit per vehicle: sale_price - cost - duty. */
+/**
+ * Profit per vehicle in the base currency.
+ *
+ * Total cost = purchase + shipping + landed + modification (FX captured at
+ * transaction time), profit = sale base - total cost.
+ */
 class ProfitReport implements ReportQuery
 {
     use FetchesVehicles;
@@ -31,7 +36,9 @@ class ProfitReport implements ReportQuery
             $this->field('model'),
             $this->field('client'),
             $this->field('cost'),
-            $this->field('duty'),
+            $this->field('shipping_cost'),
+            $this->field('landed_cost'),
+            $this->field('modification_cost'),
             $this->column('total_cost'),
             $this->field('price'),
             $this->column('profit'),
@@ -41,26 +48,23 @@ class ProfitReport implements ReportQuery
     public function rows(): array
     {
         $rows = [];
-        foreach ($this->vehicles() as $v) {
-            $cost = (float) ($v['cost'] ?? 0);
-            $duty = (float) ($v['duty'] ?? 0);
-            $price = (float) ($v['price'] ?? 0);
-            $total = $cost + $duty;
-
+        foreach ($this->vehiclesWithCosts() as $v) {
             $rows[] = [
                 $v['vin'] ?? '',
                 $v['model'] ?? '',
                 $v['client'] ?? '',
-                $cost !== 0.0 ? $cost : '',
-                $duty !== 0.0 ? $duty : '',
-                $total !== 0.0 ? $total : '',
-                $price !== 0.0 ? $price : '',
-                $price !== 0.0 || $total !== 0.0 ? $price - $total : '',
+                $v['purchase_base'] ?? null,
+                $v['shipping_base'] ?? null,
+                $v['landed_base'] ?? null,
+                $v['modification_base'] ?? null,
+                $v['total_cost'] ?? null,
+                $v['sale_base'] ?? null,
+                $v['profit'] ?? null,
             ];
         }
 
         // Sort desc on numeric profit before formatting money to strings.
-        usort($rows, fn ($a, $b) => ((float) ($b[7] === '' ? 0 : $b[7])) <=> ((float) ($a[7] === '' ? 0 : $a[7])));
+        usort($rows, fn ($a, $b) => ((float) ($b[9] ?? 0)) <=> ((float) ($a[9] ?? 0)));
 
         return array_map(fn ($row) => [
             $row[0],
@@ -71,6 +75,8 @@ class ProfitReport implements ReportQuery
             $this->formatMoney($row[5]),
             $this->formatMoney($row[6]),
             $this->formatMoney($row[7]),
+            $this->formatMoney($row[8]),
+            $this->formatMoney($row[9]),
         ], $rows);
     }
 }

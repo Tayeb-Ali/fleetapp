@@ -33,7 +33,7 @@ class CustomsReport implements ReportQuery
             $this->field('stage'),
             $this->field('cust_no'),
             $this->field('cust_date'),
-            $this->field('duty'),
+            $this->field('landed_cost'),
         ];
     }
 
@@ -47,7 +47,7 @@ class CustomsReport implements ReportQuery
                 $this->stageLabel($v['stage'] ?? null),
                 $v['cust_no'] ?? '',
                 $this->formatDate($v['cust_date'] ?? ''),
-                $this->formatMoney($v['duty'] ?? ''),
+                $this->formatMoney($v['landed_cost'] ?? ''),
             ],
             array_filter(
                 $this->vehicles(),

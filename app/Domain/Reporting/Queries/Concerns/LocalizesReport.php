@@ -80,6 +80,16 @@ trait LocalizesReport
         return number_format((float) $value, 2, '.', ',').' '.$this->reportCurrency();
     }
 
+    /** Money value in an explicit currency, e.g. "100,000.00 AED". */
+    protected function formatMoneyIn(mixed $value, string $currency): string
+    {
+        if ($value === null || $value === '') {
+            return '';
+        }
+
+        return number_format((float) $value, 2, '.', ',').' '.$currency;
+    }
+
     protected function reportCurrency(): string
     {
         try {

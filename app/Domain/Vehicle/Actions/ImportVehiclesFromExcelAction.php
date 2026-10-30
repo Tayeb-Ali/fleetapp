@@ -4,29 +4,39 @@ declare(strict_types=1);
 
 namespace App\Domain\Vehicle\Actions;
 
+use App\Domain\Finance\Services\CurrencyService;
 use App\Domain\Vehicle\Models\Vehicle;
+use App\Domain\Vehicle\Services\FinancialFieldsResolver;
 use App\Domain\Vehicle\Services\LegacyImporter;
 use PhpOffice\PhpSpreadsheet\Reader\Xlsx as XlsxReader;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 /**
- * Import / sync vehicles from the V2 Excel tracker (VTTR sheet).
+ * Import / sync vehicles from the V3 Excel tracker (VTTR sheet).
  *
- * Single end-to-end use case (Decision Gate Q1 → Action, Eloquent directly).
- * Header row is detected (contains "Chassis No."), data rows after it.
- * Only the 16 Excel columns are synced — financial columns
- * (cost/duty/price/paid/...) are never nulled by the sync.
+ * The tracker has three columns literally named "Currency" (purchase,
+ * shipping, sale), so the map is positional: the first occurrence belongs to
+ * purchase, the second to shipping and the third to sale.
+ *
+ * Financial columns are synced when present; empty cells never null existing
+ * values. Computed base amounts are compared with the sheet's "In USD" and
+ * "Total Cost" columns and differences are reported as warnings.
  */
 class ImportVehiclesFromExcelAction
 {
+    /** @var array<int, string> */
+    private array $warnings = [];
+
     /**
-     * @return array{imported:int,skipped:int,errors:array<int,string>}
+     * @return array{imported:int,skipped:int,errors:array<int,string>,warnings:array<int,string>}
      */
     public function execute(string $path, bool $dryRun = false, ?callable $progress = null): array
     {
         if (! is_file($path)) {
             throw new \RuntimeException("Excel file not found: {$path}");
         }
+
+        $this->warnings = [];
 
         $reader = new XlsxReader;
         $reader->setReadDataOnly(true);
@@ -73,7 +83,7 @@ class ImportVehiclesFromExcelAction
             }
 
             try {
-                $this->upsert($payload);
+                $this->upsert($payload, (int) $rowNumber);
                 $imported++;
             } catch (\Throwable $e) {
                 $skipped++;
@@ -81,7 +91,7 @@ class ImportVehiclesFromExcelAction
             }
         }
 
-        return ['imported' => $imported, 'skipped' => $skipped, 'errors' => $errors];
+        return ['imported' => $imported, 'skipped' => $skipped, 'errors' => $errors, 'warnings' => $this->warnings];
     }
 
     /**
@@ -104,55 +114,67 @@ class ImportVehiclesFromExcelAction
     }
 
     /**
+     * Positional column map (handles the three duplicate "Currency" headers).
+     *
      * @param  array<string,mixed>  $header
      * @return array<string,string> excelCol => canonicalColumn
      */
     protected function buildColumnMap(array $header): array
     {
-        $normalize = fn ($v): string => strtolower(trim((string) preg_replace('/\s+/', ' ', (string) $v)));
-        $byName = [];
+        $ordered = [];
         foreach ($header as $col => $title) {
-            $byName[$normalize($title)] = (string) $col;
+            $normalized = strtolower(trim((string) preg_replace('/\s+/', ' ', (string) $title)));
+            if ($normalized !== '') {
+                $ordered[] = [(string) $col, $normalized];
+            }
         }
 
-        $find = function (array $needles) use ($byName): ?string {
-            foreach ($needles as $needle) {
-                foreach ($byName as $title => $col) {
+        $map = [];
+
+        $assign = function (string $canonical, array $needles, int $occurrence = 0) use (&$map, $ordered): void {
+            $matches = [];
+            foreach ($ordered as [$col, $title]) {
+                foreach ($needles as $needle) {
                     if (str_contains($title, $needle)) {
-                        return $col;
+                        $matches[] = $col;
+                        break;
                     }
                 }
             }
 
-            return null;
+            if (isset($matches[$occurrence])) {
+                $map[$matches[$occurrence]] = $canonical;
+            }
         };
 
-        $pairs = [
-            'brand' => ['brand name'],
-            'model' => ['vehicle type', 'model'],
-            'fuel' => ['fuel'],
-            'mod' => ['modified'],
-            'warehouse_location' => ['current location'],
-            'vin' => ['chassis'],
-            'pol' => ['pol', 'port of loading'],
-            'pod' => ['pod', 'port of discharge'],
-            'voyage_no' => ['voyage'],
-            'destination' => ['final destination'],
-            'shipped_at' => ['shipping date'],
-            'bl' => ['b/l'],
-            'arrived_at' => ['arrival date'],
-            'buyer_name' => ['client'],
-            'remarks' => ['remarks'],
-            'status' => ['status'],
-        ];
-
-        $map = [];
-        foreach ($pairs as $canonical => $needles) {
-            $col = $find($needles);
-            if ($col !== null) {
-                $map[$col] = $canonical;
-            }
-        }
+        $assign('brand', ['brand name']);
+        $assign('model', ['vehicle type', 'model']);
+        $assign('fuel', ['fuel']);
+        $assign('purchased_at', ['purchase date']);
+        $assign('cost', ['purchase value']);
+        $assign('purchase_currency', ['currency'], 0);
+        $assign('_in_usd', ['in usd']);
+        $assign('mod', ['modified']);
+        $assign('warehouse_location', ['current location']);
+        $assign('vin', ['chassis']);
+        $assign('pol', ['pol', 'port of loading']);
+        $assign('pod', ['pod', 'port of discharge']);
+        $assign('voyage_no', ['voyage']);
+        $assign('destination', ['final destination']);
+        $assign('bl', ['b/l', 'bill of lading']);
+        $assign('shipped_at', ['shipping date']);
+        $assign('arrived_at', ['arrival date']);
+        $assign('shipping_cost', ['shipping cost']);
+        $assign('shipping_currency', ['currency'], 1);
+        $assign('landed_cost', ['landed cost']);
+        $assign('modification_cost', ['modification cost']);
+        $assign('_total_cost', ['total cost']);
+        $assign('buyer_name', ['client']);
+        $assign('sold_at', ['sales date']);
+        $assign('sale_price', ['sales value']);
+        $assign('sale_currency', ['currency'], 2);
+        $assign('remarks', ['remarks']);
+        $assign('_status', ['status']);
 
         return $map;
     }
@@ -172,9 +194,9 @@ class ImportVehiclesFromExcelAction
         $clean = fn ($v): string => mb_substr(trim((string) ($v ?? '')), 0, 300);
 
         $vin = $clean($byCanonical['vin'] ?? '');
-        // Skip fully empty rows (the 27 gaps in V2).
+        // Skip fully empty rows (the 27 gaps in the tracker).
         $hasAny = $vin !== '';
-        foreach (['brand', 'model', 'bl', 'buyer_name', 'remarks', 'status'] as $key) {
+        foreach (['brand', 'model', 'bl', 'buyer_name', 'remarks', '_status'] as $key) {
             if (trim((string) ($byCanonical[$key] ?? '')) !== '') {
                 $hasAny = true;
                 break;
@@ -188,27 +210,48 @@ class ImportVehiclesFromExcelAction
             return ['vin' => '', '_error' => 'Missing Chassis No. (VIN)'];
         }
 
-        $statusMap = LegacyImporter::statusMap();
-        $status = $clean($byCanonical['status'] ?? '');
-        $stage = $statusMap[$status] ?? 'purchased';
+        $status = $clean($byCanonical['_status'] ?? '');
+        $stage = LegacyImporter::stageForStatus($status);
+
+        $shippedAt = $this->toDate($byCanonical['shipped_at'] ?? null);
+        $bl = $clean($byCanonical['bl'] ?? '') ?: null;
+
+        if ($stage === null) {
+            $stage = $shippedAt !== null || $bl !== null ? 'shipped' : 'purchased';
+        }
+
+        $resolver = app(FinancialFieldsResolver::class);
+        $mod = $resolver->normalizeMod($byCanonical['mod'] ?? null);
 
         return [
             'vin' => $vin,
             'brand' => $clean($byCanonical['brand'] ?? '') ?: null,
             'model' => $clean($byCanonical['model'] ?? '') ?: null,
             'fuel' => $clean($byCanonical['fuel'] ?? '') ?: null,
-            'mod' => $clean($byCanonical['mod'] ?? '') ?: null,
+            'mod' => $mod,
             'warehouse_location' => $clean($byCanonical['warehouse_location'] ?? '') ?: null,
+            'purchased_at' => $this->toDate($byCanonical['purchased_at'] ?? null),
+            'cost' => $this->toNumber($byCanonical['cost'] ?? null),
+            'purchase_currency' => $this->normalizeCurrency($byCanonical['purchase_currency'] ?? null),
             'pol' => $clean($byCanonical['pol'] ?? '') ?: null,
             'pod' => $clean($byCanonical['pod'] ?? '') ?: null,
             'voyage_no' => $clean($byCanonical['voyage_no'] ?? '') ?: null,
             'destination' => $clean($byCanonical['destination'] ?? '') ?: null,
-            'shipped_at' => $this->toDate($byCanonical['shipped_at'] ?? null),
-            'bl' => $clean($byCanonical['bl'] ?? '') ?: null,
+            'bl' => $bl,
+            'shipped_at' => $shippedAt,
             'arrived_at' => $this->toDate($byCanonical['arrived_at'] ?? null),
+            'shipping_cost' => $this->toNumber($byCanonical['shipping_cost'] ?? null),
+            'shipping_currency' => $this->normalizeCurrency($byCanonical['shipping_currency'] ?? null),
+            'landed_cost' => $this->toNumber($byCanonical['landed_cost'] ?? null),
+            'modification_cost' => $mod === 'Yes' ? $this->toNumber($byCanonical['modification_cost'] ?? null) : null,
             'buyer_name' => $clean($byCanonical['buyer_name'] ?? '') ?: null,
+            'sold_at' => $this->toDate($byCanonical['sold_at'] ?? null),
+            'sale_price' => $this->toNumber($byCanonical['sale_price'] ?? null),
+            'sale_currency' => $this->normalizeCurrency($byCanonical['sale_currency'] ?? null),
             'remarks' => mb_substr(trim((string) ($byCanonical['remarks'] ?? '')), 0, 2000) ?: null,
             'stage' => $stage,
+            '_in_usd' => $this->toNumber($byCanonical['_in_usd'] ?? null),
+            '_total_cost' => $this->toNumber($byCanonical['_total_cost'] ?? null),
         ];
     }
 
@@ -224,20 +267,76 @@ class ImportVehiclesFromExcelAction
     /**
      * @param  array<string,mixed>  $payload
      */
-    protected function upsert(array $payload): void
+    protected function upsert(array $payload, int $rowNumber = 0): void
     {
         unset($payload['_error']);
-        $vin = $payload['vin'];
+
+        $vin = (string) $payload['vin'];
         unset($payload['vin']);
 
-        // Never null financial/logistics columns that Excel does not own.
+        $inUsd = $payload['_in_usd'] ?? null;
+        $excelTotal = $payload['_total_cost'] ?? null;
+        unset($payload['_in_usd'], $payload['_total_cost']);
+
+        // Auto-create currencies the client typed in the sheet (with a warning).
+        $currencies = app(CurrencyService::class);
+        foreach (['purchase_currency', 'shipping_currency', 'sale_currency'] as $key) {
+            $code = $payload[$key] ?? null;
+            if ($code === null) {
+                continue;
+            }
+
+            $currency = $currencies->ensure($code);
+            if ($currency !== null && $currency->wasRecentlyCreated) {
+                $this->warnings[] = __('import.warnings.currency_created', [
+                    'row' => $rowNumber,
+                    'vin' => $vin,
+                    'code' => $code,
+                ]);
+            }
+        }
+
+        // Currency + FX rate + converted base amounts.
+        $payload = app(FinancialFieldsResolver::class)->apply($payload);
+
+        $purchaseBase = $payload['purchase_base_amount'] ?? null;
+        if (is_numeric($inUsd) && is_numeric($purchaseBase) && abs((float) $inUsd - (float) $purchaseBase) > 0.5) {
+            $this->warnings[] = __('import.warnings.in_usd_mismatch', [
+                'row' => $rowNumber,
+                'vin' => $vin,
+                'excel' => $inUsd,
+                'computed' => $purchaseBase,
+            ]);
+        }
+
+        if (is_numeric($excelTotal)) {
+            $computed = (float) ($payload['purchase_base_amount'] ?? 0)
+                + (float) ($payload['shipping_base_amount'] ?? 0)
+                + (float) ($payload['landed_cost'] ?? 0)
+                + (float) ($payload['modification_cost'] ?? 0);
+
+            if (abs((float) $excelTotal - $computed) > 1.0) {
+                $this->warnings[] = __('import.warnings.total_mismatch', [
+                    'row' => $rowNumber,
+                    'vin' => $vin,
+                    'excel' => $excelTotal,
+                    'computed' => $computed,
+                ]);
+            }
+        }
+
+        // Never null existing values with empty cells.
         $payload = array_filter($payload, fn ($v) => $v !== null);
 
         if ($payload === []) {
             return;
         }
 
-        Vehicle::query()->updateOrCreate(['vin' => $vin], $payload);
+        // Restore soft-deleted VINs instead of failing / duplicating.
+        $vehicle = Vehicle::withTrashed()->firstOrNew(['vin' => $vin]);
+        $vehicle->fill($payload);
+        $vehicle->deleted_at = null;
+        $vehicle->save();
     }
 
     protected function toDate(mixed $value): ?string
@@ -263,5 +362,27 @@ class ImportVehiclesFromExcelAction
         $ts = strtotime($text);
 
         return $ts === false ? null : date('Y-m-d', $ts);
+    }
+
+    protected function toNumber(mixed $value): ?float
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        $clean = preg_replace('/[^0-9.\-]/', '', (string) $value);
+
+        return is_numeric($clean) ? (float) $clean : null;
+    }
+
+    protected function normalizeCurrency(mixed $value): ?string
+    {
+        $code = strtoupper(preg_replace('/[^A-Za-z]/', '', (string) ($value ?? '')));
+
+        return $code === '' ? null : substr($code, 0, 8);
     }
 }

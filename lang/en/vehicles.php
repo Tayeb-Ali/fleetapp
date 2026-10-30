@@ -41,4 +41,22 @@ return [
     'already_registered' => 'VIN already registered.',
     'unknown_transition' => 'Unknown transition.',
     'stage_unavailable' => 'This action is unavailable for the current stage.',
+
+    // Financial fields (base UI keys).
+    'purchased_at' => 'Purchase date',
+    'purchase_currency' => 'Purchase currency',
+    'purchase_fx_rate' => 'Purchase exchange rate',
+    'shipping_cost' => 'Shipping cost',
+    'shipping_currency' => 'Shipping currency',
+    'shipping_fx_rate' => 'Shipping exchange rate',
+    'landed_cost' => 'Landed cost (customs + port)',
+    'modification_cost' => 'Modification cost',
+    'shipped_at' => 'Shipping date',
+    'sold_at' => 'Sale date',
+    'sale_price' => 'Sale price',
+    'sale_currency' => 'Sale currency',
+    'sale_fx_rate' => 'Sale exchange rate',
+    'amount_paid' => 'Amount paid',
+    'customs_no' => 'Customs declaration no.',
+    'warehouse_location' => 'Warehouse location',
 ];

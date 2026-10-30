@@ -101,6 +101,14 @@ class ImportLegacyData extends Command
                 $this->line('  ... and '.(count($result['errors']) - 20).' more errors.');
             }
 
+            foreach (array_slice($result['warnings'], 0, 20) as $warning) {
+                $this->warn("  - {$warning}");
+            }
+            $warnings = $result['warnings'];
+            if (count($warnings) > 20) {
+                $this->warn('  ... and '.(count($warnings) - 20).' more warnings.');
+            }
+
             return self::SUCCESS;
         }
 

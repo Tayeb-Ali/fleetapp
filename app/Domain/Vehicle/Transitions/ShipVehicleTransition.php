@@ -30,7 +30,7 @@ class ShipVehicleTransition extends AbstractTransition
 
     public function fields(): array
     {
-        return ['bl', 'voyage_no', 'pol', 'pod', 'destination', 'shipped_at', 'arrived_at'];
+        return ['bl', 'voyage_no', 'pol', 'pod', 'destination', 'shipped_at', 'arrived_at', 'shipping_cost', 'shipping_currency', 'shipping_fx_rate'];
     }
 
     public function requiredFields(): array

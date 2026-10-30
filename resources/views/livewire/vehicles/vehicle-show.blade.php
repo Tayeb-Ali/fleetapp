@@ -25,6 +25,8 @@
         </div>
     @endif
 
+    <livewire:vehicles.vehicle-financials :vin="$v['vin']" :key="'fin-'.$v['vin']" />
+
     <h2 class="text-xs text-slate-500 dark:text-slate-400 mt-5 mb-2">{{ __('vehicles.history') }}</h2>
     <div class="space-y-2 border-s-2 border-indigo-200 dark:border-indigo-800 ps-3">
         @forelse ($events as $e)

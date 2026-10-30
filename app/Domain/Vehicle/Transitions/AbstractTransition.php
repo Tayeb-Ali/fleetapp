@@ -6,6 +6,7 @@ namespace App\Domain\Vehicle\Transitions;
 
 use App\Domain\Vehicle\Enums\UserRole;
 use App\Domain\Vehicle\Models\Vehicle;
+use App\Domain\Vehicle\Services\FinancialFieldsResolver;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -42,6 +43,8 @@ abstract class AbstractTransition implements TransitionInterface
     public function apply(Vehicle $vehicle, array $validated, ?User $user = null): Vehicle
     {
         $validated = $this->normalizeKeys($validated);
+        $validated = app(FinancialFieldsResolver::class)
+            ->apply($validated, $vehicle->toArray());
 
         return DB::transaction(function () use ($vehicle, $validated) {
             $vehicle->fill($validated);
@@ -108,7 +111,9 @@ abstract class AbstractTransition implements TransitionInterface
         return match ($field) {
             'purchased_at', 'shipped_at', 'arrived_at', 'customs_date',
             'warehouse_in_at', 'sold_at', 'delivered_at' => "{$prefix}|date",
-            'cost', 'duty', 'sale_price', 'amount_paid' => "{$prefix}|numeric|min:0",
+            'cost', 'shipping_cost', 'landed_cost', 'duty', 'modification_cost',
+            'sale_price', 'amount_paid', 'purchase_fx_rate', 'shipping_fx_rate', 'sale_fx_rate' => "{$prefix}|numeric|min:0",
+            'purchase_currency', 'shipping_currency', 'sale_currency' => "{$prefix}|string|max:8",
             'sale_order_no' => $required ? 'required|string|max:255' : 'nullable|string|max:255',
             default => "{$prefix}|string|max:500",
         };

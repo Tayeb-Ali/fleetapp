@@ -6,6 +6,7 @@ namespace App\Domain\Vehicle\Actions;
 
 use App\Domain\Vehicle\Enums\VehicleStage;
 use App\Domain\Vehicle\Models\Vehicle;
+use App\Domain\Vehicle\Services\FinancialFieldsResolver;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -25,22 +26,25 @@ class UpdateVehicleDataAction
         return match ($role) {
             'admin' => [
                 'brand', 'model', 'mod', 'fuel', 'purchased_at', 'supplier', 'cost',
+                'purchase_currency', 'purchase_fx_rate',
                 'bl', 'voyage_no', 'pol', 'pod', 'destination', 'shipped_at', 'arrived_at',
-                'customs_no', 'customs_date', 'duty',
+                'shipping_cost', 'shipping_currency', 'shipping_fx_rate',
+                'customs_no', 'customs_date', 'landed_cost', 'modification_cost',
                 'warehouse_location', 'warehouse_in_at',
-                'sale_order_no', 'buyer_name', 'buyer_phone', 'sale_price', 'amount_paid', 'sold_at',
+                'sale_order_no', 'buyer_name', 'buyer_phone', 'sale_price', 'sale_currency', 'sale_fx_rate', 'amount_paid', 'sold_at',
                 'receiver_name', 'delivered_at',
                 'remarks', 'stage',
             ],
             'purchaser' => [
                 'brand', 'model', 'mod', 'fuel', 'purchased_at', 'supplier', 'cost',
+                'purchase_currency', 'purchase_fx_rate', 'modification_cost',
                 'bl', 'voyage_no', 'pol', 'pod', 'shipped_at', 'arrived_at', 'remarks',
             ],
-            'tracker' => ['bl', 'voyage_no', 'pol', 'pod', 'destination', 'shipped_at', 'arrived_at', 'remarks'],
-            'customs' => ['customs_no', 'customs_date', 'duty', 'remarks'],
+            'tracker' => ['bl', 'voyage_no', 'pol', 'pod', 'destination', 'shipped_at', 'arrived_at', 'shipping_cost', 'shipping_currency', 'shipping_fx_rate', 'remarks'],
+            'customs' => ['customs_no', 'customs_date', 'landed_cost', 'remarks'],
             'warehouse' => ['warehouse_location', 'warehouse_in_at', 'receiver_name', 'delivered_at', 'remarks'],
-            'sales' => ['sale_order_no', 'buyer_name', 'buyer_phone', 'sale_price', 'amount_paid', 'sold_at', 'remarks'],
-            'accountant' => ['supplier', 'cost', 'duty', 'sale_price', 'amount_paid', 'remarks'],
+            'sales' => ['sale_order_no', 'buyer_name', 'buyer_phone', 'sale_price', 'sale_currency', 'sale_fx_rate', 'amount_paid', 'sold_at', 'remarks'],
+            'accountant' => ['supplier', 'cost', 'purchase_currency', 'purchase_fx_rate', 'shipping_cost', 'shipping_currency', 'shipping_fx_rate', 'landed_cost', 'modification_cost', 'sale_price', 'sale_currency', 'sale_fx_rate', 'amount_paid', 'remarks'],
             default => [],
         };
     }
@@ -58,6 +62,8 @@ class UpdateVehicleDataAction
             'purchased_at' => 'nullable|date',
             'supplier' => 'nullable|string|max:500',
             'cost' => 'nullable|numeric|min:0',
+            'purchase_currency' => 'nullable|string|max:8',
+            'purchase_fx_rate' => 'nullable|numeric|min:0.000001',
             'bl' => 'nullable|string|max:255',
             'voyage_no' => 'nullable|string|max:255',
             'pol' => 'nullable|string|max:255',
@@ -65,15 +71,21 @@ class UpdateVehicleDataAction
             'destination' => 'nullable|string|max:255',
             'shipped_at' => 'nullable|date',
             'arrived_at' => 'nullable|date',
+            'shipping_cost' => 'nullable|numeric|min:0',
+            'shipping_currency' => 'nullable|string|max:8',
+            'shipping_fx_rate' => 'nullable|numeric|min:0.000001',
             'customs_no' => 'nullable|string|max:255',
             'customs_date' => 'nullable|date',
-            'duty' => 'nullable|numeric|min:0',
+            'landed_cost' => 'nullable|numeric|min:0',
+            'modification_cost' => 'nullable|numeric|min:0',
             'warehouse_location' => 'nullable|string|max:255',
             'warehouse_in_at' => 'nullable|date',
             'sale_order_no' => 'nullable|string|max:255',
             'buyer_name' => 'nullable|string|max:255',
             'buyer_phone' => 'nullable|string|max:255',
             'sale_price' => 'nullable|numeric|min:0',
+            'sale_currency' => 'nullable|string|max:8',
+            'sale_fx_rate' => 'nullable|numeric|min:0.000001',
             'amount_paid' => 'nullable|numeric|min:0',
             'sold_at' => 'nullable|date',
             'receiver_name' => 'nullable|string|max:255',
@@ -114,6 +126,9 @@ class UpdateVehicleDataAction
                 $validated[$key] = null;
             }
         }
+
+        // Currency / FX rate / converted base amounts (rate snapshot wins).
+        $validated = app(FinancialFieldsResolver::class)->apply($validated, $vehicle->toArray());
 
         if (array_key_exists('stage', $validated) && $validated['stage'] !== null) {
             $validated['stage'] = VehicleStage::from($validated['stage'])->value;

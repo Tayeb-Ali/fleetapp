@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Reporting\Queries\Concerns;
 
 use App\Domain\Vehicle\Models\Vehicle;
+use App\Domain\Vehicle\Services\VehicleCostService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -44,6 +45,22 @@ trait FetchesVehicles
         return [];
     }
 
+    /**
+     * Vehicle rows merged with their base-currency cost breakdown
+     * (purchase_base, shipping_base, landed_base, modification_base,
+     * total_cost, sale_base, profit, fx_missing).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    protected function vehiclesWithCosts(): array
+    {
+        $service = app(VehicleCostService::class);
+
+        return array_map(function (array $vehicle) use ($service): array {
+            return array_merge($vehicle, $service->for($vehicle)->toArray());
+        }, $this->vehicles());
+    }
+
     /** Days elapsed since a Y-m-d date (legacy dd()). '' when empty/invalid. */
     protected function daysSince(mixed $date): mixed
     {
@@ -65,7 +82,14 @@ trait FetchesVehicles
     /** Legacy nv(): cast numeric fields, keep everything else as-is. */
     protected function num(array $v, string $key): mixed
     {
-        if (! in_array($key, ['cost', 'duty', 'price', 'paid'], true)) {
+        $numeric = [
+            'cost', 'duty', 'price', 'paid',
+            'shipping_cost', 'landed_cost', 'modification_cost',
+            'purchase_fx_rate', 'shipping_fx_rate', 'sale_fx_rate',
+            'purchase_base_amount', 'shipping_base_amount', 'sale_base_amount',
+        ];
+
+        if (! in_array($key, $numeric, true)) {
             return $v[$key] ?? '';
         }
 

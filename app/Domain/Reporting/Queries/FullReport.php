@@ -16,18 +16,24 @@ class FullReport implements ReportQuery
 
     /** All vehicle fields except stage (legacy FK = C minus stage). */
     public const FIELDS = [
-        'brand', 'model', 'vin', 'fuel', 'mod', 'pdate', 'supplier', 'cost',
+        'brand', 'model', 'vin', 'fuel', 'mod', 'pdate', 'supplier',
+        'cost', 'purchase_currency', 'purchase_fx_rate', 'purchase_base_amount',
         'bl', 'voy', 'pol', 'pod', 'dest', 'ship', 'arr',
-        'cust_no', 'cust_date', 'duty', 'loc', 'in_date',
-        'ord_no', 'client', 'phone', 'price', 'paid', 'sale_date',
-        'recv', 'del_date', 'remarks',
+        'shipping_cost', 'shipping_currency', 'shipping_fx_rate', 'shipping_base_amount',
+        'cust_no', 'cust_date', 'landed_cost', 'modification_cost', 'loc', 'in_date',
+        'ord_no', 'client', 'phone', 'price', 'sale_currency', 'sale_fx_rate', 'sale_base_amount',
+        'paid', 'sale_date', 'recv', 'del_date', 'remarks',
     ];
 
     /** Date fields are formatted with the active locale. */
     private const DATE_FIELDS = ['pdate', 'ship', 'arr', 'cust_date', 'in_date', 'sale_date', 'del_date'];
 
     /** Money fields are formatted with the configured currency. */
-    private const MONEY_FIELDS = ['cost', 'duty', 'price', 'paid'];
+    private const MONEY_FIELDS = [
+        'cost', 'shipping_cost', 'landed_cost', 'modification_cost',
+        'purchase_base_amount', 'shipping_base_amount', 'sale_base_amount',
+        'price', 'paid',
+    ];
 
     public function key(): string
     {
