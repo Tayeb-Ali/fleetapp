@@ -1,10 +1,10 @@
 {
     "cairo": {
-        "normal": "C:\\Users\\Ppain\\www\\fleetapp\\storage\\fonts\/cairo_normal_5260b96668acb42e438dbacd090644a0",
-        "bold": "cairo_bold_9149ca160be3018b055746f4f7367ae4"
+        "normal": "\/home\/fadie\/Projects\/fleetapp\/storage\/fonts\/cairo_normal_3c26da181380f4f37a63a1d33a4fb14b",
+        "bold": "cairo_bold_b3c61e7208c7a530b75e3d4e4ff6ce3b"
     },
     "inter": {
-        "normal": "C:\\Users\\Ppain\\www\\fleetapp\\storage\\fonts\/inter_normal_e039f3a04a9cb73ac62dc9106c690630",
-        "bold": "inter_bold_6c0c851dbe3f98aa2aba121df1058663"
+        "normal": "\/home\/fadie\/Projects\/fleetapp\/storage\/fonts\/inter_normal_991fbadb6550554804b2b83868a651be",
+        "bold": "inter_bold_6c1ba4c6cda1eb20b87898322c6e67dd"
     }
 }
