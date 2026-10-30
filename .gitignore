@@ -37,3 +37,6 @@ Thumbs.db
 /.playwright-mcp
 .vercel
 .env*
+
+# Bundled system library injected into the Vercel function (build artifact)
+runtime-lib/

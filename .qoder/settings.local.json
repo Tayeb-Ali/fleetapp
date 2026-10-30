@@ -15,7 +15,9 @@
       "Bash(npx vercel logs --help 2>&1 | head -40)",
       "Bash()",
       "Bash(npx vercel logs -p fleetapp --since 60m -n 30 2>&1 | tail -50)",
-      "Bash(ls .vercel/builders 2>/dev/null; ls .vercel/output 2>/dev/null | head; cat .vercel/README.txt 2>/dev/null | head -20; echo \"---PROJECT SETTINGS---\"; npx vercel project inspect fleetapp 2>&1 | tail -40)"
+      "Bash(ls .vercel/builders 2>/dev/null; ls .vercel/output 2>/dev/null | head; cat .vercel/README.txt 2>/dev/null | head -20; echo \"---PROJECT SETTINGS---\"; npx vercel project inspect fleetapp 2>&1 | tail -40)",
+      "Bash(ls -a ~/.local/share/com.vercel.cli 2>/dev/null; ls -a ~/.config/vercel 2>/dev/null; find ~ -maxdepth 4 -name 'auth.json' -path '*vercel*' 2>/dev/null)",
+      "Read(//home/fadie/.local/share/com.vercel.cli/**)"
     ]
   }
 }
