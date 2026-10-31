@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Vehicle\Support;
 
+use App\Domain\Identity\Support\DateDisplay;
 use Carbon\Carbon;
 
 /**
@@ -67,10 +68,14 @@ final class ActivityPresenter
         return $label === $key ? $stage : (string) $label;
     }
 
-    public static function datetime(mixed $value, string $format = 'd M Y H:i'): string
+    public static function datetime(mixed $value, ?string $format = null): string
     {
         if ($value === null || $value === '') {
             return '';
+        }
+
+        if ($format === null) {
+            return DateDisplay::datetime($value);
         }
 
         try {

@@ -31,7 +31,7 @@
 </div>
 <div class="row">
   <div><strong>{{ __('documents.reference') }}:</strong> <span dir="ltr">{{ $vehicle['ord_no'] ?? $vehicle['vin'] ?? '-' }}</span></div>
-  <div class="end"><strong>{{ __('documents.date') }}:</strong> <span dir="ltr">{{ $vehicle['del_date'] ?? '-' }}</span></div>
+  <div class="end"><strong>{{ __('documents.date') }}:</strong> <span><bdi>{{ ! empty($vehicle['del_date']) ? \App\Domain\Identity\Support\DateDisplay::full($vehicle['del_date']) : '-' }}</bdi></span></div>
 </div>
 <h2>{{ __('documents.buyer') }}</h2>
 <table dir="auto">
@@ -48,7 +48,7 @@
 </table>
 <h2>{{ __('documents.delivery_note') }}</h2>
 <table dir="auto">
-  <tr><td class="k">{{ __('vehicles.del_date') }}</td><td class="v"><span dir="ltr">{{ $vehicle['del_date'] ?? '-' }}</span></td></tr>
+  <tr><td class="k">{{ __('vehicles.del_date') }}</td><td class="v"><span><bdi>{{ ! empty($vehicle['del_date']) ? \App\Domain\Identity\Support\DateDisplay::full($vehicle['del_date']) : '-' }}</bdi></span></td></tr>
   <tr><td class="k">{{ __('vehicles.recv') }}</td><td class="v">{{ $vehicle['recv'] ?? '-' }}</td></tr>
   <tr><td class="k">{{ __('vehicles.ord_no') }}</td><td class="v"><span dir="ltr">{{ $vehicle['ord_no'] ?? '-' }}</span></td></tr>
 </table>
@@ -57,6 +57,6 @@
   <div class="sig"><div class="line">{{ __('documents.delivered_by') }}<br>{{ __('documents.name_date') }}</div></div>
   <div class="sig"><div class="line">{{ __('documents.received_by') }}<br>{{ __('documents.name_date') }}</div></div>
 </div>
-<div class="footer">{{ $company ?? config('app.name', 'Fleet Tracker') }} - {{ __('documents.generated') }} {{ date('Y-m-d H:i') }} UTC</div>
+<div class="footer">{{ $company ?? config('app.name', 'Fleet Tracker') }} - {{ __('documents.generated') }} {{ \App\Domain\Identity\Support\DateDisplay::datetime(now()) }} UTC</div>
 </body>
 </html>

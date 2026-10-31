@@ -28,6 +28,7 @@
   $currency = $saleCurrency ?? $currency ?? 'USD';
   $fmt = fn($n) => number_format((float) ($n ?? 0), 2, '.', ',').' '.$currency;
   $balance = ((float) ($vehicle['price'] ?? 0)) - ((float) ($vehicle['paid'] ?? 0));
+  $saleDate = $vehicle['sale_date'] ?? $vehicle['sold_at'] ?? ($vehicle['updated'] ?? null);
 @endphp
 <div class="banner">
   <div class="co">{{ $company ?? config('app.name', 'Fleet Tracker') }}</div>
@@ -35,7 +36,7 @@
 </div>
 <div class="row">
   <div><strong>{{ __('documents.order_no') }}:</strong> <span dir="ltr">{{ $vehicle['ord_no'] ?? '-' }}</span></div>
-  <div class="end"><strong>{{ __('documents.date') }}:</strong> <span dir="ltr">{{ $vehicle['sale_date'] ?? substr((string) ($vehicle['updated'] ?? date('Y-m-d')), 0, 10) }}</span></div>
+  <div class="end"><strong>{{ __('documents.date') }}:</strong> <span><bdi>{{ $saleDate ? \App\Domain\Identity\Support\DateDisplay::full($saleDate) : '-' }}</bdi></span></div>
 </div>
 <h2>{{ __('documents.buyer') }}</h2>
 <table dir="auto">
@@ -60,6 +61,6 @@
   <div class="sig"><div class="line">{{ __('documents.prepared_by') }}<br>{{ __('documents.name_date') }}</div></div>
   <div class="sig"><div class="line">{{ __('documents.buyer_acceptance') }}<br>{{ __('documents.name_date') }}</div></div>
 </div>
-<div class="footer">{{ $company ?? config('app.name', 'Fleet Tracker') }} - {{ __('documents.generated') }} {{ date('Y-m-d H:i') }} UTC</div>
+<div class="footer">{{ $company ?? config('app.name', 'Fleet Tracker') }} - {{ __('documents.generated') }} {{ \App\Domain\Identity\Support\DateDisplay::datetime(now()) }} UTC</div>
 </body>
 </html>

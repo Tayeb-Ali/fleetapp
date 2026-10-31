@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Concerns;
 
+use App\Domain\Identity\Support\DateDisplay;
 use Illuminate\Notifications\DatabaseNotification;
 
 /** Builds locale-aware view models from stored database notifications. */
@@ -35,7 +36,7 @@ trait PresentsNotifications
             'note' => $this->stringOrNull($data['note'] ?? null),
             'url' => $this->stringOrNull($data['url'] ?? null),
             'created_human' => $created?->diffForHumans(),
-            'created_full' => $created?->format('Y-m-d H:i'),
+            'created_full' => $created !== null ? DateDisplay::datetime($created) : null,
         ];
     }
 

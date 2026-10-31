@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Admin;
 
 use App\Domain\Identity\Services\SettingsService;
+use App\Domain\Identity\Support\DateDisplay;
 use App\Domain\Notification\Notifications\FleetNotification;
 use App\Domain\Notification\Services\FleetNotifier;
 use App\Models\User;
@@ -21,6 +22,10 @@ class SettingsEditor extends Component
 
     public string $currency = '';
 
+    public string $dateFormatShort = '';
+
+    public string $dateFormatFull = '';
+
     /** @var array<string, array{roles: string[], notify: string[]}> */
     public array $perm = [];
 
@@ -28,6 +33,8 @@ class SettingsEditor extends Component
     {
         $this->company = $settings->getCompany();
         $this->currency = $settings->getCurrency();
+        $this->dateFormatShort = $settings->getDateFormatShort();
+        $this->dateFormatFull = $settings->getDateFormatFull();
 
         $stored = $settings->getTransitionPermissions();
         foreach ($this->transitions() as $key => $transition) {
@@ -49,6 +56,8 @@ class SettingsEditor extends Component
         $this->validate([
             'company' => ['required', 'string', 'max:80'],
             'currency' => ['required', 'string', 'max:8'],
+            'dateFormatShort' => ['required', Rule::in(array_keys(DateDisplay::SHORT_FORMATS))],
+            'dateFormatFull' => ['required', Rule::in(array_keys(DateDisplay::FULL_FORMATS))],
             'perm' => ['array'],
             'perm.*.roles' => ['array'],
             'perm.*.roles.*' => [Rule::in($roleKeys)],
@@ -59,6 +68,8 @@ class SettingsEditor extends Component
         $settings->update([
             'company' => $this->company,
             'currency' => $this->currency,
+            'date_format_short' => $this->dateFormatShort,
+            'date_format_full' => $this->dateFormatFull,
             'perm' => $this->perm,
         ]);
 
@@ -138,6 +149,28 @@ class SettingsEditor extends Component
             'transitions' => $this->transitions(),
             'performerRoles' => $performerRoles,
             'notifyRoles' => $notifyRoles,
+            'shortFormats' => $this->formatOptions(DateDisplay::SHORT_FORMATS),
+            'fullFormats' => $this->formatOptions(DateDisplay::FULL_FORMATS),
+            'shortPreview' => DateDisplay::sample($this->dateFormatShort),
+            'fullPreview' => DateDisplay::sample($this->dateFormatFull),
         ]);
+    }
+
+    /**
+     * @param  array<string, string>  $formats
+     * @return array<int, array{value: string, label: string}>
+     */
+    protected function formatOptions(array $formats): array
+    {
+        $options = [];
+
+        foreach ($formats as $format => $key) {
+            $options[] = [
+                'value' => $format,
+                'label' => __('admin.date_formats.'.$key).' — '.DateDisplay::sample($format),
+            ];
+        }
+
+        return $options;
     }
 }

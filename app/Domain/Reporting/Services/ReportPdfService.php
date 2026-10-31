@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Reporting\Services;
 
 use App\Domain\Identity\Services\SettingsService;
+use App\Domain\Identity\Support\DateDisplay;
 use App\Domain\Reporting\Contracts\ReportQuery;
 use App\Domain\Reporting\Support\ReportFilters;
 use ArPHP\I18N\Arabic;
@@ -100,7 +101,7 @@ class ReportPdfService
 
     private function metaLine(array $rows): string
     {
-        $line = __('reports.generated').' '.now()->translatedFormat('d M Y H:i').' UTC | '.count($rows).' '.__('reports.records');
+        $line = __('reports.generated').' '.DateDisplay::datetime(now()).' UTC | '.count($rows).' '.__('reports.records');
         $period = app(ReportFilters::class)->describe();
 
         return $period === '' ? $line : $line.' | '.$period;

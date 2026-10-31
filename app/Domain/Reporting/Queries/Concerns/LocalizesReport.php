@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Reporting\Queries\Concerns;
 
 use App\Domain\Identity\Services\SettingsService;
-use Carbon\Carbon;
+use App\Domain\Identity\Support\DateDisplay;
 
 /**
  * Localized labels + value formatting shared by report queries.
@@ -56,18 +56,14 @@ trait LocalizesReport
         return $label === $key ? $code : (string) $label;
     }
 
-    /** Locale-aware short date, e.g. "10 Oct 2026" / "10 أكتوبر 2026". */
+    /** Locale-aware date using the configured short format. */
     protected function formatDate(mixed $value): string
     {
         if (! is_string($value) || trim($value) === '') {
             return '';
         }
 
-        try {
-            return Carbon::parse($value)->translatedFormat('d M Y');
-        } catch (\Throwable) {
-            return $value;
-        }
+        return DateDisplay::short($value);
     }
 
     /** Money value with the configured currency, e.g. "30,000.00 USD". */

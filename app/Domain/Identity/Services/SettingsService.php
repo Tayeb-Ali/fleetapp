@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Identity\Services;
 
+use App\Domain\Identity\Support\DateDisplay;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +19,8 @@ use Illuminate\Support\Facades\Schema;
  */
 class SettingsService
 {
-    public const CACHE_KEY = 'fleet.settings';
+    /** Versioned so new keys rebuild the forever cache after a deploy. */
+    public const CACHE_KEY = 'fleet.settings.v2';
 
     public const DEFAULT_COMPANY = 'RASD Tech';
 
@@ -41,7 +43,7 @@ class SettingsService
     ];
 
     /**
-     * @return array{company: string, currency: string, perm: array<string, array{roles: string[], notify: string[]}>}
+     * @return array{company: string, currency: string, date_format_short: string, date_format_full: string, perm: array<string, array{roles: string[], notify: string[]}>}
      */
     public function all(): array
     {
@@ -51,6 +53,8 @@ class SettingsService
             return [
                 'company' => (string) ($stored['company'] ?? self::DEFAULT_COMPANY),
                 'currency' => (string) ($stored['currency'] ?? self::DEFAULT_CURRENCY),
+                'date_format_short' => DateDisplay::sanitizeShort($this->storedString($stored, 'date_format_short')),
+                'date_format_full' => DateDisplay::sanitizeFull($this->storedString($stored, 'date_format_full')),
                 'perm' => is_array($stored['perm'] ?? null) ? $stored['perm'] : [],
             ];
         });
@@ -66,6 +70,16 @@ class SettingsService
         return $this->all()['currency'];
     }
 
+    public function getDateFormatShort(): string
+    {
+        return $this->all()['date_format_short'];
+    }
+
+    public function getDateFormatFull(): string
+    {
+        return $this->all()['date_format_full'];
+    }
+
     /** @return array<string, array{roles: string[], notify: string[]}> */
     public function getTransitionPermissions(): array
     {
@@ -73,7 +87,7 @@ class SettingsService
     }
 
     /**
-     * @param  array{company?: string, currency?: string, perm?: array}  $data
+     * @param  array{company?: string, currency?: string, date_format_short?: string, date_format_full?: string, perm?: array}  $data
      */
     public function update(array $data): void
     {
@@ -85,6 +99,14 @@ class SettingsService
 
         if (array_key_exists('currency', $data)) {
             $rows['currency'] = substr(strtoupper(trim((string) $data['currency'])), 0, 8);
+        }
+
+        if (array_key_exists('date_format_short', $data)) {
+            $rows['date_format_short'] = DateDisplay::sanitizeShort((string) $data['date_format_short']);
+        }
+
+        if (array_key_exists('date_format_full', $data)) {
+            $rows['date_format_full'] = DateDisplay::sanitizeFull((string) $data['date_format_full']);
         }
 
         if (array_key_exists('perm', $data) && is_array($data['perm'])) {
@@ -131,6 +153,14 @@ class SettingsService
         }
 
         return $out;
+    }
+
+    /** @param array<string, mixed> $stored */
+    protected function storedString(array $stored, string $key): ?string
+    {
+        $value = $stored[$key] ?? null;
+
+        return is_string($value) && trim($value) !== '' ? $value : null;
     }
 
     /** @return array<string, mixed> */

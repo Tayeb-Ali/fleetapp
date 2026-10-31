@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domain\Reporting\Support;
 
+use App\Domain\Identity\Support\DateDisplay;
+
 /**
  * Date-range filter for report queries.
  *
@@ -115,25 +117,27 @@ final class ReportFilters
         }
 
         $field = (string) __('reports.date_fields.'.$this->dateField);
+        $from = $this->from !== null ? DateDisplay::short($this->from) : null;
+        $to = $this->to !== null ? DateDisplay::short($this->to) : null;
 
-        if ($this->from !== null && $this->to !== null) {
+        if ($from !== null && $to !== null) {
             return (string) __('reports.filters.range', [
                 'field' => $field,
-                'from' => $this->from,
-                'to' => $this->to,
+                'from' => $from,
+                'to' => $to,
             ]);
         }
 
-        if ($this->from !== null) {
+        if ($from !== null) {
             return (string) __('reports.filters.range_from', [
                 'field' => $field,
-                'from' => $this->from,
+                'from' => $from,
             ]);
         }
 
         return (string) __('reports.filters.range_to', [
             'field' => $field,
-            'to' => $this->to,
+            'to' => $to,
         ]);
     }
 

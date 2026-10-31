@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Vehicles;
 
+use App\Domain\Identity\Support\DateDisplay;
 use App\Domain\Vehicle\Models\Vehicle;
 use App\Domain\Vehicle\VehicleMeta;
 use Illuminate\Support\Facades\DB;
@@ -106,10 +107,38 @@ class VehicleShow extends Component
         $transitions = VehicleMeta::transitionsFor((string) ($vehicle['stage'] ?? ''));
         $fields = VehicleMeta::fields();
 
+        foreach ($fields as $key => $meta) {
+            if (($meta[1] ?? '') !== 'date' || empty($vehicle[$key])) {
+                continue;
+            }
+
+            $formatted = DateDisplay::full($vehicle[$key]);
+            $vehicle[$key] = $formatted;
+
+            $column = Vehicle::LEGACY_MAP[$key] ?? null;
+            if ($column !== null) {
+                $vehicle[$column] = $formatted;
+            }
+        }
+
+        $events = array_map(function (array $event): array {
+            $stamp = DateDisplay::datetime($event['ts'] ?? $event['created_at'] ?? null);
+            $event['ts'] = $stamp;
+            $event['created_at'] = $stamp;
+
+            return $event;
+        }, $this->events());
+
+        $files = array_map(function (array $file): array {
+            $file['ts'] = DateDisplay::datetime($file['ts'] ?? $file['created_at'] ?? null);
+
+            return $file;
+        }, $this->files());
+
         return view('livewire.vehicles.vehicle-show', [
             'v' => $vehicle,
-            'events' => $this->events(),
-            'files' => $this->files(),
+            'events' => $events,
+            'files' => $files,
             'transitions' => $transitions,
             'fieldLabels' => $fields,
         ]);
