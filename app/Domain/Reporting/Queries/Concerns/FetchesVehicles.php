@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Reporting\Queries\Concerns;
 
+use App\Domain\Reporting\Support\ReportFilters;
 use App\Domain\Vehicle\Models\Vehicle;
 use App\Domain\Vehicle\Services\VehicleCostService;
 use Illuminate\Database\Eloquent\Model;
@@ -19,30 +20,30 @@ use Illuminate\Support\Facades\Schema;
  */
 trait FetchesVehicles
 {
-    /** All vehicle rows as plain arrays. */
+    /** All vehicle rows as plain arrays, honouring the bound date filter. */
     protected function vehicles(): array
     {
+        $rows = [];
+
         // 1) Domain model, when it exists.
         if (class_exists(Vehicle::class)) {
             $model = Vehicle::class;
 
-            return $model::query()->get()
+            $rows = $model::query()->get()
                 ->map(fn ($v) => $v instanceof Model ? $v->toArray() : (array) $v)
                 ->all();
-        }
-
-        // 2) Raw table fallback.
-        try {
-            if (Schema::hasTable('vehicles')) {
-                return DB::table('vehicles')->get()
+        } elseif (Schema::hasTable('vehicles')) {
+            // 2) Raw table fallback.
+            try {
+                $rows = DB::table('vehicles')->get()
                     ->map(fn ($r) => (array) $r)
                     ->all();
+            } catch (\Throwable) {
+                return [];
             }
-        } catch (\Throwable) {
-            return [];
         }
 
-        return [];
+        return app(ReportFilters::class)->apply($rows);
     }
 
     /**

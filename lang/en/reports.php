@@ -14,6 +14,42 @@ return [
     'rows' => 'Rows',
     'columns' => 'Columns',
 
+    'date_fields' => [
+        'purchased_at' => 'Purchase date',
+        'shipped_at' => 'Shipping date',
+        'arrived_at' => 'Arrival date',
+        'customs_date' => 'Clearance date',
+        'warehouse_in_at' => 'Warehouse entry date',
+        'sold_at' => 'Sale date',
+        'delivered_at' => 'Delivery date',
+    ],
+
+    'filters' => [
+        'date_field' => 'Date field',
+        'all_dates' => 'All dates',
+        'from' => 'From',
+        'to' => 'To',
+        'per_page' => 'Rows per page',
+        'all' => 'All',
+        'filtered' => 'Filtered',
+        'show' => 'Show filters',
+        'hide' => 'Hide filters',
+        'page' => 'Page :page of :pages',
+        'reset' => 'Reset',
+        'prev' => 'Previous',
+        'next' => 'Next',
+        'showing' => 'Showing :from–:to of :total',
+        'range' => ':field: :from → :to',
+        'range_from' => ':field from :from',
+        'range_to' => ':field until :to',
+        'presets' => [
+            'this_month' => 'This month',
+            'last_month' => 'Last month',
+            'last_30' => 'Last 30 days',
+            'this_year' => 'This year',
+        ],
+    ],
+
     'profit' => 'Profit by vehicle',
     'outstanding' => 'Outstanding balances',
 

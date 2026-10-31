@@ -14,6 +14,42 @@ return [
     'rows' => 'الصفوف',
     'columns' => 'الأعمدة',
 
+    'date_fields' => [
+        'purchased_at' => 'تاريخ الشراء',
+        'shipped_at' => 'تاريخ الشحن',
+        'arrived_at' => 'تاريخ الوصول',
+        'customs_date' => 'تاريخ التخليص',
+        'warehouse_in_at' => 'تاريخ دخول المستودع',
+        'sold_at' => 'تاريخ البيع',
+        'delivered_at' => 'تاريخ التسليم',
+    ],
+
+    'filters' => [
+        'date_field' => 'التاريخ',
+        'all_dates' => 'كل التواريخ',
+        'from' => 'من',
+        'to' => 'إلى',
+        'per_page' => 'عدد الصفوف',
+        'all' => 'الكل',
+        'filtered' => 'مُصفّى',
+        'show' => 'إظهار الفلاتر',
+        'hide' => 'إخفاء الفلاتر',
+        'page' => 'الصفحة :page من :pages',
+        'reset' => 'إعادة تعيين',
+        'prev' => 'السابق',
+        'next' => 'التالي',
+        'showing' => 'عرض :from–:to من :total',
+        'range' => ':field: :from — :to',
+        'range_from' => ':field من :from',
+        'range_to' => ':field حتى :to',
+        'presets' => [
+            'this_month' => 'هذا الشهر',
+            'last_month' => 'الشهر الماضي',
+            'last_30' => 'آخر 30 يومًا',
+            'this_year' => 'هذا العام',
+        ],
+    ],
+
     'profit' => 'الربح حسب المركبة',
     'outstanding' => 'الأرصدة المستحقة',
 
