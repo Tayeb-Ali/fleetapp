@@ -21,9 +21,11 @@ fail() { printf '%sERROR: %s%s\n' "$red" "$1" "$reset" >&2; exit 1; }
 step "Checking toolchain"
 
 command -v php      >/dev/null 2>&1 || fail "php is not in PATH"
-command -v composer >/dev/null 2>&1 || fail "composer is not in PATH (install composer or use composer.phar)"
 command -v node     >/dev/null 2>&1 || fail "node is not in PATH (Vite 8 needs Node ^20.19 or >=22.12)"
 command -v npm      >/dev/null 2>&1 || fail "npm is not in PATH"
+
+has_composer=1
+command -v composer >/dev/null 2>&1 || has_composer=0
 
 node -e 'const [maj, min] = process.versions.node.split(".").map(Number); const ok = (maj === 20 && min >= 19) || (maj === 22 && min >= 12) || maj > 22; if (!ok) { console.error("Node " + process.versions.node + " is too old for Vite 8"); process.exit(1); }' \
     || fail "Upgrade Node on the server to 24.x (recommended) or 22.12+"
@@ -39,11 +41,24 @@ rm -f public/hot
 ok "public/hot removed"
 
 step "Installing PHP dependencies"
-composer install --no-dev --optimize-autoloader --no-interaction
-ok "PHP dependencies installed"
+if [ "$has_composer" = "1" ]; then
+    composer install --no-dev --optimize-autoloader --no-interaction
+    ok "PHP dependencies installed"
+elif [ -f vendor/autoload.php ]; then
+    warn "composer not found — keeping the existing vendor/ directory"
+else
+    fail "composer is not in PATH and vendor/ is missing"
+fi
+
+step "Publishing Livewire assets"
+# Served as real files from public/, so nginx static rules never 404 on the
+# dynamic /livewire-<hash>/... route.
+php artisan vendor:publish --tag=livewire:assets --force
+ok "Livewire assets published to public/vendor/livewire"
 
 step "Installing JS dependencies from package-lock.json"
-npm ci --no-audit --no-fund
+npm ci --include=dev --no-audit --no-fund
+[ -f node_modules/vite/bin/vite.js ] || fail "vite was not installed — check the npm ci output above"
 ok "JS dependencies installed"
 
 step "Building frontend assets"
