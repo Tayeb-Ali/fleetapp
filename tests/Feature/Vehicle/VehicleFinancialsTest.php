@@ -129,6 +129,20 @@ class VehicleFinancialsTest extends TestCase
         $this->assertFalse($breakdown->hasMissingRates());
     }
 
+    public function test_qualified_yes_counts_as_modified_for_the_total(): void
+    {
+        $vehicle = Vehicle::factory()->create([
+            'vin' => 'VIN-FIN-9',
+            'cost' => 100,
+            'mod' => 'Yes - Workshop',
+            'modification_cost' => 50,
+        ]);
+
+        $breakdown = app(VehicleCostService::class)->for($vehicle);
+
+        $this->assertEqualsWithDelta(150.0, $breakdown->totalCost, 0.01);
+    }
+
     public function test_missing_rate_is_reported_not_invented(): void
     {
         $vehicle = Vehicle::factory()->create([
@@ -144,5 +158,50 @@ class VehicleFinancialsTest extends TestCase
         $this->assertNull($breakdown->purchaseBase);
         $this->assertSame(['purchase'], $breakdown->missingRates);
         $this->assertTrue($breakdown->hasMissingRates());
+        $this->assertNull($breakdown->totalCost);
+        $this->assertNull($breakdown->profit);
+    }
+
+    public function test_total_cost_converts_each_component_with_its_own_currency(): void
+    {
+        $vehicle = Vehicle::factory()->create([
+            'vin' => 'VIN-FIN-7',
+            'cost' => 3672.50,
+            'purchase_currency' => 'AED',
+            'purchase_fx_rate' => 3.6725,
+            'shipping_cost' => 734.50,
+            'shipping_currency' => 'AED',
+            'shipping_fx_rate' => 3.6725,
+            'landed_cost' => 50,
+            'mod' => 'Yes',
+            'modification_cost' => 25,
+            'sale_price' => 2000,
+            'sale_currency' => 'USD',
+            'sale_fx_rate' => 1,
+        ]);
+
+        $breakdown = app(VehicleCostService::class)->for($vehicle);
+
+        $this->assertEqualsWithDelta(1000.0, $breakdown->purchaseBase, 0.01);
+        $this->assertEqualsWithDelta(200.0, $breakdown->shippingBase, 0.01);
+        $this->assertEqualsWithDelta(1275.0, $breakdown->totalCost, 0.01);
+        $this->assertEqualsWithDelta(725.0, $breakdown->profit, 0.01);
+    }
+
+    public function test_saving_a_foreign_amount_without_a_rate_is_rejected(): void
+    {
+        $admin = $this->makeUser('admin');
+        $vehicle = Vehicle::factory()->create(['vin' => 'VIN-FIN-8', 'cost' => null]);
+
+        Livewire::actingAs($admin)
+            ->test(VehicleFinancials::class, ['vin' => $vehicle->vin])
+            ->set('form.purchased_at', '2026-10-10')
+            ->set('form.purchase_currency', 'AED')
+            ->set('form.purchase_fx_rate', '')
+            ->set('form.cost', '3672.50')
+            ->call('save')
+            ->assertHasErrors(['form.purchase_fx_rate']);
+
+        $this->assertNull($vehicle->fresh()->cost);
     }
 }

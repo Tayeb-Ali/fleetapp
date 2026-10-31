@@ -6,9 +6,11 @@ namespace Tests\Feature\Vehicle;
 
 use App\Domain\Vehicle\Models\Vehicle;
 use App\Domain\Vehicle\Support\TransitionRegistry;
+use App\Livewire\Vehicles\TransitionForm;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class TransitionTest extends TestCase
@@ -127,5 +129,59 @@ class TransitionTest extends TestCase
 
         // sell requires instock; purchased vehicle must be denied even for admin.
         $this->assertFalse($admin->can('transition', [$vehicle, 'sell']));
+    }
+
+    public function test_transition_form_rejects_a_vehicle_in_the_wrong_stage(): void
+    {
+        $sales = $this->makeUser('sales');
+        $vehicle = Vehicle::factory()->create(['stage' => 'purchased']);
+
+        Livewire::actingAs($sales)
+            ->test(TransitionForm::class, ['vin' => $vehicle->vin, 'transitionKey' => 'sell'])
+            ->set('data.ord_no', 'SO-EARLY')
+            ->set('data.client', 'Acme')
+            ->set('data.price', '1000')
+            ->set('data.paid', '0')
+            ->call('save')
+            ->assertHasErrors(['data']);
+
+        $this->assertSame('purchased', $vehicle->fresh()->stageValue());
+    }
+
+    public function test_transition_form_requires_a_rate_for_a_foreign_amount(): void
+    {
+        $purchaser = $this->makeUser('purchaser');
+        $vehicle = Vehicle::factory()->create(['stage' => 'purchased']);
+
+        Livewire::actingAs($purchaser)
+            ->test(TransitionForm::class, ['vin' => $vehicle->vin, 'transitionKey' => 'ship'])
+            ->set('data.bl', 'BL-1')
+            ->set('data.ship', '2026-10-10')
+            ->set('data.shipping_currency', 'AED')
+            ->set('data.shipping_cost', '100')
+            ->call('save')
+            ->assertHasErrors(['data.shipping_fx_rate']);
+
+        $fresh = $vehicle->fresh();
+        $this->assertSame('purchased', $fresh->stageValue());
+        $this->assertNull($fresh->shipping_base_amount);
+    }
+
+    public function test_transition_form_rejects_a_duplicate_sale_order_number(): void
+    {
+        $sales = $this->makeUser('sales');
+        Vehicle::factory()->create(['stage' => 'sold', 'sale_order_no' => 'SO-DUP']);
+        $vehicle = Vehicle::factory()->inStock()->create();
+
+        Livewire::actingAs($sales)
+            ->test(TransitionForm::class, ['vin' => $vehicle->vin, 'transitionKey' => 'sell'])
+            ->set('data.ord_no', 'SO-DUP')
+            ->set('data.client', 'Acme')
+            ->set('data.price', '1000')
+            ->set('data.paid', '0')
+            ->call('save')
+            ->assertHasErrors(['data.ord_no']);
+
+        $this->assertSame('instock', $vehicle->fresh()->stageValue());
     }
 }

@@ -88,7 +88,7 @@ class ImportLegacyData extends Command
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 
         if ($ext === 'xlsx' || $ext === 'xls') {
-            $this->info("Importing V2 Excel: {$path}".($dryRun ? ' (dry-run)' : ''));
+            $this->info("Importing Excel: {$path}".($dryRun ? ' (dry-run)' : ''));
             $result = $excelImporter->execute($path, $dryRun, function () {
                 $this->output->write('.');
             });

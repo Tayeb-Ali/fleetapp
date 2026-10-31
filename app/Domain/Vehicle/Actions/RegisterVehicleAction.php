@@ -65,7 +65,14 @@ class RegisterVehicleAction
         }
 
         // Currency / FX rate / converted base amounts (rate snapshot wins).
-        $validated = app(FinancialFieldsResolver::class)->apply($validated);
+        $resolver = app(FinancialFieldsResolver::class);
+        $validated = $resolver->apply($validated);
+
+        if (($missing = $resolver->missingRate($validated)) !== null) {
+            throw ValidationException::withMessages([
+                $missing[0] => __('finance.errors.rate_required', ['currency' => $missing[1]]),
+            ]);
+        }
 
         // Legacy line 154: stage auto — shipped when B/L present, else purchased.
         $validated['stage'] = ! empty($validated['bl'] ?? $data['bl'] ?? null)

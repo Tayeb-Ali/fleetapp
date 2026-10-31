@@ -1095,7 +1095,7 @@
             "created_at": "2026-10-30 23:49:54",
             "updated_at": "2026-10-30 23:49:54",
             "deleted_at": null,
-            "mod": "No",
+            "mod": "Yes",
             "purchase_currency": "USD",
             "purchase_fx_rate": 1,
             "purchase_base_amount": null,

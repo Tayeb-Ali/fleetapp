@@ -35,12 +35,12 @@ class ProfitReport implements ReportQuery
             $this->field('vin'),
             $this->field('model'),
             $this->field('client'),
-            $this->field('cost'),
-            $this->field('shipping_cost'),
-            $this->field('landed_cost'),
-            $this->field('modification_cost'),
+            $this->column('purchase_base'),
+            $this->column('shipping_base'),
+            $this->column('landed_base'),
+            $this->column('modification_base'),
             $this->column('total_cost'),
-            $this->field('price'),
+            $this->column('sale_base'),
             $this->column('profit'),
         ];
     }

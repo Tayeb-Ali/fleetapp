@@ -7,6 +7,7 @@ namespace Tests\Feature\Files;
 use App\Domain\Vehicle\Models\Vehicle;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\View;
 use Tests\TestCase;
 
 class DocumentTest extends TestCase
@@ -50,6 +51,39 @@ class DocumentTest extends TestCase
             'application/pdf',
             (string) $response->headers->get('Content-Type')
         );
+    }
+
+    public function test_sale_order_uses_the_sale_currency(): void
+    {
+        $user = $this->makeUser();
+        $vehicle = Vehicle::factory()->create([
+            'sale_order_no' => 'SO-103',
+            'buyer_name' => 'Acme Corp',
+            'sale_price' => 25000,
+            'amount_paid' => 5000,
+            'sale_currency' => 'AED',
+            'sale_fx_rate' => 3.6725,
+        ]);
+
+        $captured = null;
+        View::composer('documents.sale-order', function ($view) use (&$captured): void {
+            $captured = $view->getData();
+        });
+
+        $this->actingAs($user)->get(route('documents.sale-order', $vehicle->vin))->assertOk();
+
+        $this->assertSame('AED', $captured['saleCurrency']);
+
+        $html = view('documents.sale-order', [
+            'vehicle' => $vehicle->toArray(),
+            'company' => 'RASD',
+            'currency' => 'USD',
+            'saleCurrency' => 'AED',
+        ])->render();
+
+        $this->assertStringContainsString('25,000.00 AED', $html);
+        $this->assertStringContainsString('5,000.00 AED', $html);
+        $this->assertStringContainsString('20,000.00 AED', $html);
     }
 
     public function test_delivery_note_unless_delivered_returns_400(): void

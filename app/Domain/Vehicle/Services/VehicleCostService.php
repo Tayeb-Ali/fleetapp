@@ -67,18 +67,29 @@ class VehicleCostService
 
         $landed = $this->amount($v, 'landed_cost') ?? $this->amount($v, 'duty');
 
-        $modified = in_array(strtolower(trim((string) ($v['mod'] ?? ''))), ['yes', 'y', '1', 'true'], true);
+        $modified = FinancialFieldsResolver::isModified($v['mod'] ?? null);
         $modification = $modified ? $this->amount($v, 'modification_cost') : null;
 
-        $total = round(
-            ($purchase['base'] ?? 0.0)
-            + ($shipping['base'] ?? 0.0)
-            + ($landed ?? 0.0)
-            + ($modification ?? 0.0),
-            2,
-        );
+        $hasCostInputs = $purchase['base'] !== null
+            || $shipping['base'] !== null
+            || $landed !== null
+            || $modification !== null;
 
-        $profit = $sale['base'] !== null ? round($sale['base'] - $total, 2) : null;
+        // Never report a partial total: a native amount without an FX rate
+        // would silently understate cost and overstate profit.
+        $total = ($hasCostInputs && ! $purchase['missing'] && ! $shipping['missing'])
+            ? round(
+                ($purchase['base'] ?? 0.0)
+                + ($shipping['base'] ?? 0.0)
+                + ($landed ?? 0.0)
+                + ($modification ?? 0.0),
+                2,
+            )
+            : null;
+
+        $profit = ($total !== null && $sale['base'] !== null)
+            ? round($sale['base'] - $total, 2)
+            : null;
 
         $missing = [];
         foreach (['purchase' => $purchase, 'shipping' => $shipping, 'sale' => $sale] as $key => $component) {

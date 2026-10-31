@@ -26,7 +26,7 @@ final readonly class CostBreakdown
         public ?float $shippingBase,
         public ?float $landedBase,
         public ?float $modificationBase,
-        public float $totalCost,
+        public ?float $totalCost,
         public ?float $saleNative,
         public string $saleCurrency,
         public ?float $saleRate,

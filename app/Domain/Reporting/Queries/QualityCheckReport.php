@@ -8,6 +8,7 @@ use App\Domain\Reporting\Contracts\ReportQuery;
 use App\Domain\Reporting\Queries\Concerns\FetchesVehicles;
 use App\Domain\Reporting\Queries\Concerns\LocalizesReport;
 use App\Domain\Vehicle\Models\VehicleAttachment;
+use App\Domain\Vehicle\Services\FinancialFieldsResolver;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -96,10 +97,10 @@ class QualityCheckReport implements ReportQuery
             if (($v['sale_native'] ?? null) === null && in_array($stage, $sold, true)) {
                 $issues[] = 'missing_sale_value';
             }
-            if (($v['mod'] ?? '') !== '' && ! in_array(strtolower((string) $v['mod']), ['yes', 'no'], true)) {
+            if (($v['mod'] ?? '') !== '' && ! preg_match('/^(yes|no)\b/i', trim((string) $v['mod']))) {
                 $issues[] = 'invalid_modification_flag';
             }
-            if (($v['modification_base'] ?? null) === null && in_array(strtolower((string) ($v['mod'] ?? '')), ['yes'], true)) {
+            if (($v['modification_base'] ?? null) === null && FinancialFieldsResolver::isModified($v['mod'] ?? null)) {
                 $issues[] = 'missing_modification_cost';
             }
 

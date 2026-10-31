@@ -133,6 +133,29 @@ class ImportV3Test extends TestCase
         unlink($path);
     }
 
+    public function test_workshop_modification_is_treated_as_modified(): void
+    {
+        $path = $this->makeV3File([
+            [
+                'TOYOTA', 'HILUX', 'Petrol', '2026-01-10', 1000,
+                'USD', 1000, 'Yes - Workshop', '', 'VIN-V3-5',
+                '', '', '', '', '',
+                '', '', '', '',
+                '', 500, '',
+                '', '', '', '', '', 'Not shipped',
+            ],
+        ]);
+
+        app(ImportVehiclesFromExcelAction::class)->execute($path);
+
+        $vehicle = Vehicle::query()->find('VIN-V3-5');
+
+        $this->assertSame('Yes', $vehicle->mod);
+        $this->assertEqualsWithDelta(500.0, (float) $vehicle->modification_cost, 0.01);
+
+        unlink($path);
+    }
+
     public function test_modification_cost_is_ignored_when_not_modified(): void
     {
         $path = $this->makeV3File([

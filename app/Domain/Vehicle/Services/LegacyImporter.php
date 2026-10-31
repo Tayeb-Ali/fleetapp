@@ -82,7 +82,13 @@ class LegacyImporter
             $stage = $map[$record['status'] ?? ''] ?? 'purchased';
         }
 
-        $keys = ['brand', 'model', 'fuel', 'mod', 'pdate', 'supplier', 'cost', 'bl', 'voy', 'pol', 'pod', 'dest', 'ship', 'arr', 'cust_no', 'cust_date', 'duty', 'loc', 'in_date', 'ord_no', 'client', 'phone', 'price', 'paid', 'sale_date', 'recv', 'del_date', 'remarks'];
+        $keys = ['brand', 'model', 'fuel', 'mod', 'pdate', 'supplier', 'cost', 'bl', 'voy', 'pol', 'pod', 'dest', 'ship', 'arr', 'cust_no', 'cust_date', 'duty', 'loc', 'in_date', 'ord_no', 'client', 'phone', 'price', 'paid', 'sale_date', 'recv', 'del_date', 'remarks',
+            // New financial columns (kept when the source already uses the new schema).
+            'purchased_at', 'purchase_currency', 'purchase_fx_rate', 'purchase_base_amount',
+            'shipped_at', 'shipping_cost', 'shipping_currency', 'shipping_fx_rate', 'shipping_base_amount',
+            'landed_cost', 'modification_cost',
+            'sold_at', 'sale_price', 'sale_currency', 'sale_fx_rate', 'sale_base_amount', 'amount_paid',
+        ];
 
         $payload = ['vin' => $vin, 'stage' => $stage];
         foreach ($keys as $k) {

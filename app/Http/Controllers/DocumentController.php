@@ -48,6 +48,16 @@ class DocumentController extends Controller
         return (string) config('fleet.currency', SettingsService::DEFAULT_CURRENCY);
     }
 
+    /**
+     * @param  array<string, mixed>  $vehicle
+     */
+    protected function saleCurrency(array $vehicle): string
+    {
+        $currency = strtoupper(trim((string) ($vehicle['sale_currency'] ?? '')));
+
+        return $currency !== '' ? $currency : $this->currency();
+    }
+
     protected function findVehicle(string $vin): ?array
     {
         if (class_exists(Vehicle::class)) {
@@ -79,6 +89,7 @@ class DocumentController extends Controller
             'vehicle' => $vehicle,
             'company' => $this->company(),
             'currency' => $this->currency(),
+            'saleCurrency' => $this->saleCurrency($vehicle),
         ])
             ->setPaper('a4', 'portrait')
             ->setOption('defaultFont', 'DejaVu Sans')

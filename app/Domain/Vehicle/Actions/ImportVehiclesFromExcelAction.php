@@ -310,12 +310,19 @@ class ImportVehiclesFromExcelAction
         }
 
         if (is_numeric($excelTotal)) {
+            $unconverted = false;
+            foreach ([['cost', 'purchase_base_amount'], ['shipping_cost', 'shipping_base_amount']] as [$native, $base]) {
+                if (($payload[$native] ?? null) !== null && ($payload[$base] ?? null) === null) {
+                    $unconverted = true;
+                }
+            }
+
             $computed = (float) ($payload['purchase_base_amount'] ?? 0)
                 + (float) ($payload['shipping_base_amount'] ?? 0)
                 + (float) ($payload['landed_cost'] ?? 0)
                 + (float) ($payload['modification_cost'] ?? 0);
 
-            if (abs((float) $excelTotal - $computed) > 1.0) {
+            if (! $unconverted && abs((float) $excelTotal - $computed) > 1.0) {
                 $this->warnings[] = __('import.warnings.total_mismatch', [
                     'row' => $rowNumber,
                     'vin' => $vin,

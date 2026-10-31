@@ -9,6 +9,7 @@ use App\Domain\Finance\Services\ExchangeRateService;
 use App\Domain\Vehicle\Actions\AttachFileAction;
 use App\Domain\Vehicle\Actions\RegisterVehicleAction;
 use App\Domain\Vehicle\Enums\AttachmentCategory;
+use App\Domain\Vehicle\Services\FinancialFieldsResolver;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -49,7 +50,7 @@ class RegisterVehicle extends Component
 
     public function updated(string $name, mixed $value = null): void
     {
-        if ($name === 'data.mod' && $value !== 'Yes') {
+        if ($name === 'data.mod' && ! FinancialFieldsResolver::isModified($value)) {
             $this->data['modification_cost'] = '';
         }
 
@@ -84,7 +85,7 @@ class RegisterVehicle extends Component
             $payload[$key] = $clean === '' ? null : $clean;
         }
 
-        if (($payload['mod'] ?? 'No') !== 'Yes') {
+        if (! FinancialFieldsResolver::isModified($payload['mod'] ?? null)) {
             $payload['modification_cost'] = null;
         }
 

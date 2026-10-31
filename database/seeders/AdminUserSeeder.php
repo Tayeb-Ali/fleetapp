@@ -17,21 +17,20 @@ class AdminUserSeeder extends Seeder
 
         $user->forceFill([
             'name' => 'Administrator',
-            'email' => "admin@adaa.sd",
+            'email' => 'admin@adaa.sd',
             'password' => Hash::make('admin123'),
             'role' => 'admin',
             'active' => true,
         ])->save();
-     $user1 = User::firstOrNew(['username' => 'Elteyab']);
+        $user1 = User::firstOrNew(['username' => 'Elteyab']);
 
         $user1->forceFill([
             'name' => 'Administrator',
-            'email' => "Elteyab@adaa.sd",
+            'email' => 'Elteyab@adaa.sd',
             'password' => Hash::make('123123'),
             'role' => 'admin',
             'active' => true,
         ])->save();
-    
-        
-        }
+
+    }
 }

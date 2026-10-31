@@ -128,7 +128,14 @@ class UpdateVehicleDataAction
         }
 
         // Currency / FX rate / converted base amounts (rate snapshot wins).
-        $validated = app(FinancialFieldsResolver::class)->apply($validated, $vehicle->toArray());
+        $resolver = app(FinancialFieldsResolver::class);
+        $validated = $resolver->apply($validated, $vehicle->toArray());
+
+        if (($missing = $resolver->missingRate($validated)) !== null) {
+            throw ValidationException::withMessages([
+                $missing[0] => __('finance.errors.rate_required', ['currency' => $missing[1]]),
+            ]);
+        }
 
         if (array_key_exists('stage', $validated) && $validated['stage'] !== null) {
             $validated['stage'] = VehicleStage::from($validated['stage'])->value;

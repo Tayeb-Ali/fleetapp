@@ -28,11 +28,25 @@ class FullReport implements ReportQuery
     /** Date fields are formatted with the active locale. */
     private const DATE_FIELDS = ['pdate', 'ship', 'arr', 'cust_date', 'in_date', 'sale_date', 'del_date'];
 
-    /** Money fields are formatted with the configured currency. */
-    private const MONEY_FIELDS = [
-        'cost', 'shipping_cost', 'landed_cost', 'modification_cost',
+    /** Native amounts are formatted with the currency they were paid in. */
+    private const NATIVE_CURRENCY = [
+        'cost' => 'purchase_currency',
+        'shipping_cost' => 'shipping_currency',
+        'price' => 'sale_currency',
+        'paid' => 'sale_currency',
+    ];
+
+    /** Base-currency amounts (configured base currency). */
+    private const BASE_MONEY_FIELDS = [
+        'landed_cost', 'modification_cost',
         'purchase_base_amount', 'shipping_base_amount', 'sale_base_amount',
-        'price', 'paid',
+    ];
+
+    /** Snapshot columns fall back to the computed breakdown when unset. */
+    private const COMPUTED_BASE = [
+        'purchase_base_amount' => 'purchase_base',
+        'shipping_base_amount' => 'shipping_base',
+        'sale_base_amount' => 'sale_base',
     ];
 
     public function key(): string
@@ -49,7 +63,8 @@ class FullReport implements ReportQuery
     {
         return array_merge(
             [$this->field('stage')],
-            array_map(fn ($k) => $this->field($k), self::FIELDS)
+            array_map(fn ($k) => $this->field($k), self::FIELDS),
+            [$this->column('total_cost'), $this->column('profit')]
         );
     }
 
@@ -58,16 +73,33 @@ class FullReport implements ReportQuery
         return array_map(
             fn ($v) => array_merge(
                 [$this->stageLabel($v['stage'] ?? null)],
-                array_map(fn ($k) => $this->formatCell($v, $k), self::FIELDS)
+                array_map(fn ($k) => $this->formatCell($v, $k), self::FIELDS),
+                [
+                    $this->formatMoney($v['total_cost'] ?? null),
+                    $this->formatMoney($v['profit'] ?? null),
+                ]
             ),
-            $this->vehicles()
+            $this->vehiclesWithCosts()
         );
     }
 
     protected function formatCell(array $v, string $key): mixed
     {
-        if (in_array($key, self::MONEY_FIELDS, true)) {
-            return $this->formatMoney($this->num($v, $key));
+        if (array_key_exists($key, self::NATIVE_CURRENCY)) {
+            return $this->formatMoneyIn(
+                $this->num($v, $key),
+                (string) ($v[self::NATIVE_CURRENCY[$key]] ?? '') ?: $this->reportCurrency()
+            );
+        }
+
+        if (in_array($key, self::BASE_MONEY_FIELDS, true)) {
+            $value = $this->num($v, $key);
+
+            if (($value === '' || $value === null) && isset(self::COMPUTED_BASE[$key])) {
+                $value = $v[self::COMPUTED_BASE[$key]] ?? null;
+            }
+
+            return $this->formatMoney($value);
         }
 
         if (in_array($key, self::DATE_FIELDS, true)) {

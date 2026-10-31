@@ -15,6 +15,7 @@ use App\Domain\Vehicle\VehicleMeta;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Validator;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -121,6 +122,10 @@ class TransitionForm extends Component
             }
         }
 
+        if (! $this->validateFields((array) ($def['fields'] ?? []))) {
+            return null;
+        }
+
         if ($this->proofs !== []) {
             $this->validate([
                 'proofs' => 'array|max:5',
@@ -128,23 +133,48 @@ class TransitionForm extends Component
             ]);
         }
 
-        // Role gate: admin always allowed.
-        $role = auth()->user()->role ?? 'viewer';
-        if ($role !== 'admin' && ! in_array($role, (array) ($def['roles'] ?? []), true)) {
-            $this->addError('data', '403');
+        if (! Schema::hasTable('vehicles')) {
+            $this->addError('data', __('vehicles.table_missing'));
 
             return null;
         }
 
-        $oldStage = null;
+        if (class_exists(Vehicle::class)) {
+            $model = Vehicle::class;
+            $vehicle = $model::query()->where('vin', $this->vin)->first();
 
-        try {
-            if (! Schema::hasTable('vehicles')) {
-                $this->addError('data', __('vehicles.table_missing'));
+            if ($vehicle === null) {
+                $this->addError('data', __('vehicles.not_found'));
 
                 return null;
             }
 
+            if (! in_array($vehicle->stageValue(), (array) ($def['from'] ?? []), true)) {
+                $this->addError('data', __('vehicles.stage_unavailable'));
+
+                return null;
+            }
+
+            $actor = auth()->user();
+            if (! $actor instanceof User || ! $actor->can('transition', [$vehicle, $this->transitionKey])) {
+                $this->addError('data', __('attachments.forbidden'));
+
+                return null;
+            }
+        } else {
+            // Role gate fallback when the domain model is unavailable.
+            $role = auth()->user()->role ?? 'viewer';
+            if ($role !== 'admin' && ! in_array($role, (array) ($def['roles'] ?? []), true)) {
+                $this->addError('data', __('attachments.forbidden'));
+
+                return null;
+            }
+        }
+
+        $oldStage = null;
+        $role = auth()->user()->role ?? 'viewer';
+
+        try {
             $columns = Schema::getColumnListing('vehicles');
             $payload = [];
             foreach ((array) ($def['fields'] ?? []) as $f) {
@@ -169,6 +199,15 @@ class TransitionForm extends Component
                 $current = $model::query()->where('vin', $this->vin)->first();
                 $currentStage = $current?->stage;
                 $oldStage = $currentStage instanceof \BackedEnum ? $currentStage->value : (string) $currentStage;
+
+                // One sale order number identifies exactly one vehicle.
+                $orderNo = $payload['sale_order_no'] ?? null;
+                if (is_string($orderNo) && $orderNo !== ''
+                    && $model::query()->where('sale_order_no', $orderNo)->where('vin', '!=', $this->vin)->exists()) {
+                    $this->addError('data.ord_no', __('vehicles.order_no_taken'));
+
+                    return null;
+                }
 
                 // Currency / FX rate / converted base amounts.
                 $payload = app(FinancialFieldsResolver::class)->apply(
@@ -214,6 +253,72 @@ class TransitionForm extends Component
         $this->dispatch('toast', __('app.saved'));
 
         return redirect()->route('vehicles.show', $this->vin);
+    }
+
+    /**
+     * Type-check the values the transition form submits and refuse a native
+     * amount that has no exchange rate (it would store a null base amount).
+     *
+     * @param  array<int, string>  $fields
+     */
+    protected function validateFields(array $fields): bool
+    {
+        $meta = VehicleMeta::fields();
+        $rules = [];
+        $attributes = [];
+
+        foreach ($fields as $field) {
+            if (! isset($meta[$field]) || ! is_array($meta[$field])) {
+                continue;
+            }
+
+            $rules[$field] = match ($meta[$field][1] ?? 'text') {
+                'number' => ['nullable', 'numeric', 'min:0'],
+                'date' => ['nullable', 'date_format:Y-m-d'],
+                'currency' => ['nullable', 'string', 'max:8', 'regex:/^[A-Za-z]{3,8}$/'],
+                default => ['nullable', 'string', 'max:2000'],
+            };
+            $attributes[$field] = __('vehicles.'.$field);
+        }
+
+        $validator = Validator::make($this->data, $rules, [], $attributes);
+
+        if ($validator->fails()) {
+            foreach ($validator->errors()->messages() as $field => $messages) {
+                foreach ($messages as $message) {
+                    $this->addError('data.'.$field, $message);
+                }
+            }
+
+            return false;
+        }
+
+        $base = app(CurrencyService::class)->base();
+        $pairs = [
+            ['shipping_cost', 'shipping_currency', 'shipping_fx_rate'],
+            ['price', 'sale_currency', 'sale_fx_rate'],
+        ];
+
+        foreach ($pairs as [$amountKey, $currencyKey, $rateKey]) {
+            if (! in_array($rateKey, $fields, true)) {
+                continue;
+            }
+
+            if (trim((string) ($this->data[$amountKey] ?? '')) === '') {
+                continue;
+            }
+
+            $currency = strtoupper(trim((string) ($this->data[$currencyKey] ?? ''))) ?: $base;
+            $rate = trim((string) ($this->data[$rateKey] ?? ''));
+
+            if ($currency !== $base && ($rate === '' || (float) $rate <= 0)) {
+                $this->addError('data.'.$rateKey, __('finance.errors.rate_required', ['currency' => $currency]));
+
+                return false;
+            }
+        }
+
+        return true;
     }
 
     protected function attachProofs(): void

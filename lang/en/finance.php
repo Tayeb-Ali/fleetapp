@@ -52,5 +52,6 @@ return [
         'invalid_code' => 'Enter a valid currency code.',
         'base_required' => 'The base currency must stay active.',
         'derive_needs_amounts' => 'Enter both the local and the base amount to derive the rate.',
+        'rate_required' => 'Enter the exchange rate for :currency (or record a monthly rate) before saving.',
     ],
 ];

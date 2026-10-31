@@ -207,15 +207,17 @@ class Vehicle extends Model
     }
 
     /**
-     * Total cost in the base currency (purchase + shipping + landed + modification).
+     * Total cost in the base currency (purchase + shipping + landed + modification),
+     * or null while the breakdown is incomplete.
      */
-    public function getTotalCostAttribute(): float
+    public function getTotalCostAttribute(): ?float
     {
         return app(VehicleCostService::class)->for($this)->totalCost;
     }
 
     /**
-     * Profit in the base currency, or null when the sale FX rate is missing.
+     * Profit in the base currency, or null when the sale price or cost
+     * breakdown cannot be converted.
      */
     public function getProfitAttribute(): ?float
     {

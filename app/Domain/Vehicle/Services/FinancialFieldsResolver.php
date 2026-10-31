@@ -73,6 +73,8 @@ class FinancialFieldsResolver
 
             if ($native === null || $native === '') {
                 $data[$baseKey] = null;
+            } elseif ((float) $native === 0.0) {
+                $data[$baseKey] = 0.0;
             } elseif ($rate !== null && $rate > 0) {
                 $data[$baseKey] = round(((float) $native) / $rate, 2);
             } else {
@@ -95,14 +97,58 @@ class FinancialFieldsResolver
         return $data;
     }
 
+    /**
+     * Native amount in a foreign currency that has no usable rate in the
+     * resolved payload — saving it would silently store a null base amount.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{0: string, 1: string}|null [rate key, currency]
+     */
+    public function missingRate(array $data): ?array
+    {
+        $base = $this->currencies->base();
+
+        foreach ([
+            ['cost', 'purchase_currency', 'purchase_fx_rate'],
+            ['shipping_cost', 'shipping_currency', 'shipping_fx_rate'],
+            ['sale_price', 'sale_currency', 'sale_fx_rate'],
+        ] as [$nativeKey, $currencyKey, $rateKey]) {
+            $native = $data[$nativeKey] ?? null;
+            if ($native === null || $native === '' || (float) $native === 0.0) {
+                continue;
+            }
+
+            $currency = strtoupper(trim((string) ($data[$currencyKey] ?? ''))) ?: $base;
+            if ($currency === $base) {
+                continue;
+            }
+
+            $rate = $data[$rateKey] ?? null;
+            if ($rate === null || $rate === '' || (float) $rate <= 0) {
+                return [$rateKey, $currency];
+            }
+        }
+
+        return null;
+    }
+
     public function normalizeMod(mixed $value): ?string
     {
         if ($value === null || trim((string) $value) === '') {
             return null;
         }
 
-        return in_array(strtolower(trim((string) $value)), ['yes', 'y', '1', 'true'], true)
-            ? 'Yes'
-            : 'No';
+        return self::isModified($value) ? 'Yes' : 'No';
+    }
+
+    /**
+     * The tracker uses qualified answers such as "Yes - Workshop"; any value
+     * starting with "yes" counts as modified.
+     */
+    public static function isModified(mixed $value): bool
+    {
+        $text = strtolower(trim((string) $value));
+
+        return $text !== '' && (str_starts_with($text, 'yes') || in_array($text, ['y', '1', 'true'], true));
     }
 }

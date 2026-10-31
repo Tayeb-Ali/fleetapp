@@ -25,7 +25,8 @@
 </head>
 <body>
 @php
-  $fmt = fn($n) => number_format((float) ($n ?? 0), 2, '.', ',').' '.($currency ?? 'USD');
+  $currency = $saleCurrency ?? $currency ?? 'USD';
+  $fmt = fn($n) => number_format((float) ($n ?? 0), 2, '.', ',').' '.$currency;
   $balance = ((float) ($vehicle['price'] ?? 0)) - ((float) ($vehicle['paid'] ?? 0));
 @endphp
 <div class="banner">

@@ -11,9 +11,9 @@
   $cellPad = $compact ? '4px 5px' : '6px 8px';
 
   // A column is numeric when every non-empty cell holds only digits/punctuation
-  // (optionally followed by the currency code). Headers then match their cells.
-  $cur = preg_quote((string) ($currency ?? ''), '/');
-  $numRe = '/^[\d\s,.\-%+–—\/:]+(\s*'.$cur.')?$/u';
+  // (optionally followed by a currency code — base or native). Headers then
+  // match their cells.
+  $numRe = '/^[\d\s,.\-%+–—\/:]+(\s*[A-Z]{3})?$/u';
   $isNum = function ($v) use ($numRe) {
       $s = trim((string) $v);
 

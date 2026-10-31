@@ -31,8 +31,8 @@ class OutstandingReport implements ReportQuery
             $this->field('client'),
             $this->field('phone'),
             $this->field('ord_no'),
-            $this->field('price'),
-            $this->field('paid'),
+            $this->column('sale_base'),
+            $this->column('total_paid'),
             $this->column('balance_due'),
         ];
     }

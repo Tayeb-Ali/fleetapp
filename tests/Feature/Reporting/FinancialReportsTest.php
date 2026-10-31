@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Reporting;
 
+use App\Domain\Reporting\Queries\CostingReport;
+use App\Domain\Reporting\Queries\FullReport;
 use App\Domain\Reporting\Queries\OutstandingReport;
 use App\Domain\Reporting\Queries\ProfitReport;
 use App\Domain\Reporting\Queries\QualityCheckReport;
@@ -37,8 +39,8 @@ class FinancialReportsTest extends TestCase
 
         $this->assertSame([
             'Chassis No. (VIN)', 'Model', 'Buyer / Organization',
-            'Purchase price', 'Shipping cost', 'Landed cost (customs + port)',
-            'Modification cost', 'Total cost', 'Sale price', 'Profit',
+            'Purchase in base currency', 'Shipping in base currency', 'Landed cost in base currency',
+            'Modification in base currency', 'Total cost', 'Sale in base currency', 'Profit',
         ], $report->columns());
         $this->assertCount(2, $rows);
 
@@ -82,6 +84,99 @@ class FinancialReportsTest extends TestCase
         $this->assertContains('Amount paid exceeds sale price', $byVin['VIN-Q2']);
     }
 
+    public function test_profit_report_leaves_profit_blank_when_cost_cannot_be_converted(): void
+    {
+        app()->setLocale('en');
+        Vehicle::factory()->create([
+            'vin' => 'VIN-P3',
+            'cost' => 500,
+            'purchase_currency' => 'EUR',
+            'purchase_fx_rate' => null,
+            'purchase_base_amount' => null,
+            'sale_price' => 1000,
+            'sale_currency' => 'USD',
+            'sale_fx_rate' => 1,
+        ]);
+
+        $row = app(ProfitReport::class)->rows()[0];
+
+        $this->assertSame('', $row[7]);
+        $this->assertSame('1,000.00 USD', $row[8]);
+        $this->assertSame('', $row[9]);
+    }
+
+    public function test_full_report_shows_native_currencies_and_computed_total_and_profit(): void
+    {
+        app()->setLocale('en');
+        Vehicle::factory()->create([
+            'vin' => 'VIN-FULL-1',
+            'stage' => 'instock',
+            'cost' => 3672.50,
+            'purchase_currency' => 'AED',
+            'purchase_fx_rate' => 3.6725,
+            'shipping_cost' => 734.50,
+            'shipping_currency' => 'AED',
+            'shipping_fx_rate' => 3.6725,
+            'landed_cost' => 50,
+            'mod' => 'Yes',
+            'modification_cost' => 25,
+            'sale_price' => 2000,
+            'sale_currency' => 'USD',
+            'sale_fx_rate' => 1,
+        ]);
+
+        $report = app(FullReport::class);
+        $columns = $report->columns();
+        $row = $report->rows()[0];
+
+        $this->assertSame('Total cost', $columns[count($columns) - 2]);
+        $this->assertSame('Profit', $columns[count($columns) - 1]);
+
+        $this->assertSame('3,672.50 AED', $row[array_search('Purchase price', $columns, true)]);
+        $this->assertSame('1,000.00 USD', $row[array_search('Purchase in base currency', $columns, true)]);
+        $this->assertSame('1,275.00 USD', $row[array_search('Total cost', $columns, true)]);
+        $this->assertSame('725.00 USD', $row[array_search('Profit', $columns, true)]);
+    }
+
+    public function test_costing_report_shows_transaction_dates_and_converted_totals(): void
+    {
+        app()->setLocale('en');
+        Vehicle::factory()->create([
+            'vin' => 'VIN-COST-1',
+            'stage' => 'sold',
+            'purchased_at' => '2026-10-10',
+            'shipped_at' => '2026-10-20',
+            'sold_at' => '2026-11-05',
+            'cost' => 3672.50,
+            'purchase_currency' => 'AED',
+            'purchase_fx_rate' => 3.6725,
+            'shipping_cost' => 734.50,
+            'shipping_currency' => 'AED',
+            'shipping_fx_rate' => 3.6725,
+            'landed_cost' => 50,
+            'mod' => 'Yes',
+            'modification_cost' => 25,
+            'sale_price' => 2000,
+            'sale_currency' => 'USD',
+            'sale_fx_rate' => 1,
+        ]);
+
+        $report = app(CostingReport::class);
+        $columns = $report->columns();
+        $row = $report->rows()[0];
+
+        $this->assertContains('Purchase date', $columns);
+        $this->assertContains('Shipping date', $columns);
+        $this->assertContains('Sale order date', $columns);
+
+        $this->assertSame('10 Oct 2026', $row[array_search('Purchase date', $columns, true)]);
+        $this->assertSame('20 Oct 2026', $row[array_search('Shipping date', $columns, true)]);
+        $this->assertSame('05 Nov 2026', $row[array_search('Sale order date', $columns, true)]);
+        $this->assertSame('3,672.50 AED', $row[array_search('Purchase (original currency)', $columns, true)]);
+        $this->assertSame('1,275.00 USD', $row[array_search('Total cost', $columns, true)]);
+        $this->assertSame('725.00 USD', $row[array_search('Profit', $columns, true)]);
+    }
+
     public function test_report_labels_localize_in_arabic(): void
     {
         app()->setLocale('ar');
@@ -89,8 +184,8 @@ class FinancialReportsTest extends TestCase
         $this->assertSame('ملخص مراحل المركبات', app(SummaryReport::class)->title());
         $this->assertSame([
             'رقم الشاسيه', 'الموديل', 'المشتري / الجهة',
-            'سعر الشراء', 'تكلفة الشحن', 'التكلفة الواصلة (الجمارك + الميناء)',
-            'تكلفة التعديل', 'إجمالي التكلفة', 'سعر البيع', 'الربح',
+            'الشراء بالعملة الأساسية', 'الشحن بالعملة الأساسية', 'التكلفة الواصلة بالعملة الأساسية',
+            'التعديل بالعملة الأساسية', 'إجمالي التكلفة', 'البيع بالعملة الأساسية', 'الربح',
         ], app(ProfitReport::class)->columns());
 
         Vehicle::factory()->create(['vin' => 'VIN-QA1', 'model' => 'HILUX', 'stage' => 'sold', 'buyer_name' => 'Buyer A', 'sale_price' => null, 'amount_paid' => null]);

@@ -8,6 +8,7 @@ use App\Domain\Finance\Services\CurrencyService;
 use App\Domain\Finance\Services\ExchangeRateService;
 use App\Domain\Vehicle\Actions\UpdateVehicleDataAction;
 use App\Domain\Vehicle\Models\Vehicle;
+use App\Domain\Vehicle\Services\FinancialFieldsResolver;
 use App\Domain\Vehicle\Services\VehicleCostService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Validation\ValidationException;
@@ -48,7 +49,7 @@ class VehicleFinancials extends Component
             'cost' => $this->stringValue($vehicle->cost),
             'purchase_currency' => (string) ($vehicle->purchase_currency ?: app(CurrencyService::class)->base()),
             'purchase_fx_rate' => $this->stringValue($vehicle->purchase_fx_rate),
-            'mod' => (string) ($vehicle->mod ?: 'No'),
+            'mod' => FinancialFieldsResolver::isModified($vehicle->mod) ? 'Yes' : 'No',
             'modification_cost' => $this->stringValue($vehicle->modification_cost),
             'shipped_at' => $this->dateValue($vehicle->shipped_at),
             'shipping_cost' => $this->stringValue($vehicle->shipping_cost),
@@ -69,7 +70,7 @@ class VehicleFinancials extends Component
 
     public function updated(string $name): void
     {
-        if ($name === 'form.mod' && $this->form['mod'] !== 'Yes') {
+        if ($name === 'form.mod' && ! FinancialFieldsResolver::isModified($this->form['mod'])) {
             $this->form['modification_cost'] = '';
         }
 
