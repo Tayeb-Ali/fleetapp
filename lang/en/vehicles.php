@@ -10,6 +10,8 @@ return [
     'supplier' => 'Supplier / Overseas Showroom',
     'cost' => 'Purchase price',
     'bl' => 'Bill of Lading No. (B/L)',
+    'bl_release' => 'B/L release',
+    'not_set' => 'Not set',
     'voy' => 'Voyage No.',
     'pol' => 'Port of loading',
     'pod' => 'Port of discharge',

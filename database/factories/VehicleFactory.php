@@ -42,6 +42,7 @@ class VehicleFactory extends Factory
             'supplier' => $this->faker->optional(0.7)->company(),
             'cost' => $this->faker->optional(0.9)->randomFloat(2, 8000, 65000),
             'bl' => null,
+            'bl_release' => null,
             'voyage_no' => null,
             'pol' => null,
             'pod' => null,
@@ -69,6 +70,7 @@ class VehicleFactory extends Factory
     {
         return $this->state(fn () => [
             'bl' => 'BL-'.$this->faker->unique()->bothify('######'),
+            'bl_release' => 'Yes',
             'voyage_no' => 'VOY-'.$this->faker->bothify('####'),
             'pol' => $this->faker->randomElement(['Jebel Ali', 'Mombasa', 'Djibouti', 'Berbera']),
             'pod' => $this->faker->randomElement(['Berbera', 'Bosaso', 'Mogadishu']),
@@ -81,6 +83,7 @@ class VehicleFactory extends Factory
     {
         return $this->state(fn () => [
             'bl' => 'BL-'.$this->faker->unique()->bothify('######'),
+            'bl_release' => 'Yes',
             'voyage_no' => 'VOY-'.$this->faker->bothify('####'),
             'customs_no' => 'CUS-'.$this->faker->bothify('######'),
             'customs_date' => $this->faker->date(),

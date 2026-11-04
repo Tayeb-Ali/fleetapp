@@ -111,6 +111,8 @@ class FinancialReportsTest extends TestCase
         Vehicle::factory()->create([
             'vin' => 'VIN-FULL-1',
             'stage' => 'instock',
+            'bl' => 'BL-FULL-1',
+            'bl_release' => 'No',
             'cost' => 3672.50,
             'purchase_currency' => 'AED',
             'purchase_fx_rate' => 3.6725,
@@ -131,6 +133,9 @@ class FinancialReportsTest extends TestCase
 
         $this->assertSame('Total cost', $columns[count($columns) - 2]);
         $this->assertSame('Profit', $columns[count($columns) - 1]);
+
+        $this->assertContains('B/L release', $columns);
+        $this->assertSame('No', $row[array_search('B/L release', $columns, true)]);
 
         $this->assertSame('3,672.50 AED', $row[array_search('Purchase price', $columns, true)]);
         $this->assertSame('1,000.00 USD', $row[array_search('Purchase in base currency', $columns, true)]);

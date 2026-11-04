@@ -65,6 +65,13 @@ class QualityCheckReport implements ReportQuery
             if (in_array($stage, $pastShipping, true) && ($v['bl'] ?? '') === '') {
                 $issues[] = 'missing_bl';
             }
+            $blRelease = FinancialFieldsResolver::normalizeYesNo($v['bl_release'] ?? null);
+            if (in_array($stage, $pastShipping, true) && $blRelease === 'No') {
+                $issues[] = 'bl_not_released';
+            }
+            if (in_array($stage, $pastShipping, true) && $blRelease === null && ($v['bl'] ?? '') !== '') {
+                $issues[] = 'missing_bl_release';
+            }
             if (in_array($stage, ['sold', 'delivered'], true) && ($v['client'] ?? '') === '') {
                 $issues[] = 'sold_without_buyer';
             }

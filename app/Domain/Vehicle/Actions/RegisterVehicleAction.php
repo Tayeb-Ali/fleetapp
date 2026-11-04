@@ -36,6 +36,7 @@ class RegisterVehicleAction
             'sale_currency' => 'nullable|string|max:8',
             'sale_fx_rate' => 'nullable|numeric|min:0.000001',
             'bl' => 'nullable|string|max:255',
+            'bl_release' => 'nullable|in:Yes,No',
             'voyage_no' => 'nullable|string|max:255',
             'pol' => 'nullable|string|max:255',
             'pod' => 'nullable|string|max:255',

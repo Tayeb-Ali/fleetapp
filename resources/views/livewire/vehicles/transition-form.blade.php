@@ -17,6 +17,12 @@
                             <option value="{{ $code }}">{{ $label }}</option>
                         @endforeach
                     </select>
+                @elseif ($type === 'yesno')
+                    <select wire:model.live="data.{{ $key }}" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm">
+                        <option value="">{{ __('vehicles.not_set') }}</option>
+                        <option value="Yes">{{ __('finance.yes') }}</option>
+                        <option value="No">{{ __('finance.no') }}</option>
+                    </select>
                 @else
                     <input @if ($type === 'date') wire:model.live="data.{{ $key }}" @else wire:model="data.{{ $key }}" @endif type="{{ $type === 'number' ? 'number' : ($type === 'date' ? 'date' : 'text') }}" @if ($type === 'number') step="0.000001" min="0" @endif class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm">
                 @endif

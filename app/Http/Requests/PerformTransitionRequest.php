@@ -48,6 +48,7 @@ class PerformTransitionRequest extends FormRequest
                 'cost', 'shipping_cost', 'landed_cost', 'duty', 'modification_cost',
                 'sale_price', 'amount_paid', 'purchase_fx_rate', 'shipping_fx_rate', 'sale_fx_rate' => "{$prefix}|numeric|min:0",
                 'purchase_currency', 'shipping_currency', 'sale_currency' => "{$prefix}|string|max:8",
+                'bl_release' => "{$prefix}|in:Yes,No",
                 default => "{$prefix}|string|max:500",
             };
         }

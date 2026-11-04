@@ -16,7 +16,8 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
  *
  * The tracker has three columns literally named "Currency" (purchase,
  * shipping, sale), so the map is positional: the first occurrence belongs to
- * purchase, the second to shipping and the third to sale.
+ * purchase, the second to shipping and the third to sale. "BL Release" is
+ * mapped separately from "B/L Number" so either header order stays safe.
  *
  * Financial columns are synced when present; empty cells never null existing
  * values. Computed base amounts are compared with the sheet's "In USD" and
@@ -56,7 +57,7 @@ class ImportVehiclesFromExcelAction
                 continue;
             }
 
-            $payload = $this->mapRow($row, $map);
+            $payload = $this->mapRow($row, $map, (int) $rowNumber);
 
             if ($progress) {
                 $progress();
@@ -161,7 +162,8 @@ class ImportVehiclesFromExcelAction
         $assign('pod', ['pod', 'port of discharge']);
         $assign('voyage_no', ['voyage']);
         $assign('destination', ['final destination']);
-        $assign('bl', ['b/l', 'bill of lading']);
+        $assign('bl', ['b/l number', 'bl number', 'b/l no', 'bl no', 'bill of lading']);
+        $assign('bl_release', ['bl release', 'b/l release']);
         $assign('shipped_at', ['shipping date']);
         $assign('arrived_at', ['arrival date']);
         $assign('shipping_cost', ['shipping cost']);
@@ -184,7 +186,7 @@ class ImportVehiclesFromExcelAction
      * @param  array<string,string>  $map
      * @return array<string,mixed>|null null when the row is empty
      */
-    protected function mapRow(array $row, array $map): ?array
+    protected function mapRow(array $row, array $map, int $rowNumber = 0): ?array
     {
         $byCanonical = [];
         foreach ($map as $excelCol => $canonical) {
@@ -196,7 +198,7 @@ class ImportVehiclesFromExcelAction
         $vin = $clean($byCanonical['vin'] ?? '');
         // Skip fully empty rows (the 27 gaps in the tracker).
         $hasAny = $vin !== '';
-        foreach (['brand', 'model', 'bl', 'buyer_name', 'remarks', '_status'] as $key) {
+        foreach (['brand', 'model', 'bl', 'bl_release', 'buyer_name', 'remarks', '_status'] as $key) {
             if (trim((string) ($byCanonical[$key] ?? '')) !== '') {
                 $hasAny = true;
                 break;
@@ -223,6 +225,16 @@ class ImportVehiclesFromExcelAction
         $resolver = app(FinancialFieldsResolver::class);
         $mod = $resolver->normalizeMod($byCanonical['mod'] ?? null);
 
+        $blReleaseRaw = $byCanonical['bl_release'] ?? null;
+        $blRelease = FinancialFieldsResolver::normalizeYesNo($blReleaseRaw);
+        if ($blRelease === null && trim((string) ($blReleaseRaw ?? '')) !== '') {
+            $this->warnings[] = __('import.warnings.invalid_bl_release', [
+                'row' => $rowNumber,
+                'vin' => $vin,
+                'value' => mb_substr(trim((string) $blReleaseRaw), 0, 50),
+            ]);
+        }
+
         return [
             'vin' => $vin,
             'brand' => $clean($byCanonical['brand'] ?? '') ?: null,
@@ -238,6 +250,7 @@ class ImportVehiclesFromExcelAction
             'voyage_no' => $clean($byCanonical['voyage_no'] ?? '') ?: null,
             'destination' => $clean($byCanonical['destination'] ?? '') ?: null,
             'bl' => $bl,
+            'bl_release' => $blRelease,
             'shipped_at' => $shippedAt,
             'arrived_at' => $this->toDate($byCanonical['arrived_at'] ?? null),
             'shipping_cost' => $this->toNumber($byCanonical['shipping_cost'] ?? null),

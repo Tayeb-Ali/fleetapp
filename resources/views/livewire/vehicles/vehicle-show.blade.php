@@ -4,7 +4,14 @@
             <b class="text-lg"><bdi>{{ $v['brand'] ?? '' }} {{ $v['model'] ?? '' }}</bdi></b>
             <div class="font-mono text-xs text-slate-500 dark:text-slate-400" dir="ltr">{{ $v['vin'] ?? '' }}</div>
         </div>
-        <x-stage-pill :stage="$v['stage'] ?? 'purchased'" />
+        <div class="flex flex-wrap items-center gap-2">
+            <x-stage-pill :stage="$v['stage'] ?? 'purchased'" />
+            @if (! empty($v['bl_release']))
+                <span class="rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-600 dark:border-slate-700 dark:text-slate-300">
+                    {{ __('vehicles.bl_release') }}: <b>{{ $v['bl_release'] }}</b>
+                </span>
+            @endif
+        </div>
     </div>
 
     <div class="flex flex-wrap gap-2 mt-3">

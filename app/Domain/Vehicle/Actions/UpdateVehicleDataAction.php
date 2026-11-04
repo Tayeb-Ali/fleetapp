@@ -27,7 +27,7 @@ class UpdateVehicleDataAction
             'admin' => [
                 'brand', 'model', 'mod', 'fuel', 'purchased_at', 'supplier', 'cost',
                 'purchase_currency', 'purchase_fx_rate',
-                'bl', 'voyage_no', 'pol', 'pod', 'destination', 'shipped_at', 'arrived_at',
+                'bl', 'bl_release', 'voyage_no', 'pol', 'pod', 'destination', 'shipped_at', 'arrived_at',
                 'shipping_cost', 'shipping_currency', 'shipping_fx_rate',
                 'customs_no', 'customs_date', 'landed_cost', 'modification_cost',
                 'warehouse_location', 'warehouse_in_at',
@@ -38,9 +38,9 @@ class UpdateVehicleDataAction
             'purchaser' => [
                 'brand', 'model', 'mod', 'fuel', 'purchased_at', 'supplier', 'cost',
                 'purchase_currency', 'purchase_fx_rate', 'modification_cost',
-                'bl', 'voyage_no', 'pol', 'pod', 'shipped_at', 'arrived_at', 'remarks',
+                'bl', 'bl_release', 'voyage_no', 'pol', 'pod', 'shipped_at', 'arrived_at', 'remarks',
             ],
-            'tracker' => ['bl', 'voyage_no', 'pol', 'pod', 'destination', 'shipped_at', 'arrived_at', 'shipping_cost', 'shipping_currency', 'shipping_fx_rate', 'remarks'],
+            'tracker' => ['bl', 'bl_release', 'voyage_no', 'pol', 'pod', 'destination', 'shipped_at', 'arrived_at', 'shipping_cost', 'shipping_currency', 'shipping_fx_rate', 'remarks'],
             'customs' => ['customs_no', 'customs_date', 'landed_cost', 'remarks'],
             'warehouse' => ['warehouse_location', 'warehouse_in_at', 'receiver_name', 'delivered_at', 'remarks'],
             'sales' => ['sale_order_no', 'buyer_name', 'buyer_phone', 'sale_price', 'sale_currency', 'sale_fx_rate', 'amount_paid', 'sold_at', 'remarks'],
@@ -65,6 +65,7 @@ class UpdateVehicleDataAction
             'purchase_currency' => 'nullable|string|max:8',
             'purchase_fx_rate' => 'nullable|numeric|min:0.000001',
             'bl' => 'nullable|string|max:255',
+            'bl_release' => 'nullable|in:Yes,No',
             'voyage_no' => 'nullable|string|max:255',
             'pol' => 'nullable|string|max:255',
             'pod' => 'nullable|string|max:255',

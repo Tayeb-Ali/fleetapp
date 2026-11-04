@@ -18,7 +18,7 @@ class FullReport implements ReportQuery
     public const FIELDS = [
         'brand', 'model', 'vin', 'fuel', 'mod', 'pdate', 'supplier',
         'cost', 'purchase_currency', 'purchase_fx_rate', 'purchase_base_amount',
-        'bl', 'voy', 'pol', 'pod', 'dest', 'ship', 'arr',
+        'bl', 'bl_release', 'voy', 'pol', 'pod', 'dest', 'ship', 'arr',
         'shipping_cost', 'shipping_currency', 'shipping_fx_rate', 'shipping_base_amount',
         'cust_no', 'cust_date', 'landed_cost', 'modification_cost', 'loc', 'in_date',
         'ord_no', 'client', 'phone', 'price', 'sale_currency', 'sale_fx_rate', 'sale_base_amount',
@@ -85,6 +85,10 @@ class FullReport implements ReportQuery
 
     protected function formatCell(array $v, string $key): mixed
     {
+        if ($key === 'bl_release') {
+            return $this->formatYesNo($v[$key] ?? null);
+        }
+
         if (array_key_exists($key, self::NATIVE_CURRENCY)) {
             return $this->formatMoneyIn(
                 $this->num($v, $key),

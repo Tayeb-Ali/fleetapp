@@ -29,10 +29,14 @@
                     @php
                         $arr = is_array($v) ? $v : $v->toArray();
                         $bl = $arr['bl'] ?? '';
+                        $blRelease = $arr['bl_release'] ?? null;
                         $client = $arr['client'] ?? $arr['buyer_name'] ?? '';
                         $loc = $arr['loc'] ?? $arr['warehouse_location'] ?? '';
                     @endphp
                     @if ($bl)<span>{{ __('vehicles.bl') }}: <b class="text-slate-900 dark:text-slate-100 font-medium"><bdi>{{ $bl }}</bdi></b></span>@endif
+                    @if (! empty($blRelease))
+                        <span>{{ __('vehicles.bl_release') }}: <b class="text-slate-900 dark:text-slate-100 font-medium">{{ $blRelease === 'Yes' ? __('finance.yes') : __('finance.no') }}</b></span>
+                    @endif
                     @if ($client)<span>{{ __('vehicles.client') }}: <b class="text-slate-900 dark:text-slate-100 font-medium"><bdi>{{ $client }}</bdi></b></span>@endif
                     @if ($loc)<span>{{ __('vehicles.loc') }}: <b class="text-slate-900 dark:text-slate-100 font-medium"><bdi>{{ $loc }}</bdi></b></span>@endif
                 </div>

@@ -51,6 +51,7 @@ class VehicleFinancials extends Component
             'purchase_fx_rate' => $this->stringValue($vehicle->purchase_fx_rate),
             'mod' => FinancialFieldsResolver::isModified($vehicle->mod) ? 'Yes' : 'No',
             'modification_cost' => $this->stringValue($vehicle->modification_cost),
+            'bl_release' => (string) ($vehicle->bl_release ?? ''),
             'shipped_at' => $this->dateValue($vehicle->shipped_at),
             'shipping_cost' => $this->stringValue($vehicle->shipping_cost),
             'shipping_currency' => (string) ($vehicle->shipping_currency ?: app(CurrencyService::class)->base()),
@@ -129,6 +130,7 @@ class VehicleFinancials extends Component
                 'label' => 'finance.shipping_section',
                 'fields' => [
                     ['key' => 'shipped_at', 'type' => 'date'],
+                    ['key' => 'bl_release', 'type' => 'yesno'],
                     ['key' => 'shipping_cost', 'type' => 'number'],
                     ['key' => 'shipping_currency', 'type' => 'currency'],
                     ['key' => 'shipping_fx_rate', 'type' => 'number'],

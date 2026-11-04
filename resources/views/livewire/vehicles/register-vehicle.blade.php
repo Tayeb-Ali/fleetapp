@@ -19,6 +19,12 @@
                             <option value="{{ $code }}">{{ $label }}</option>
                         @endforeach
                     </select>
+                @elseif ($type === 'yesno')
+                    <select wire:model.live="data.{{ $key }}" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-sm text-slate-900 dark:text-slate-100">
+                        <option value="">{{ __('vehicles.not_set') }}</option>
+                        <option value="Yes">{{ __('finance.yes') }}</option>
+                        <option value="No">{{ __('finance.no') }}</option>
+                    </select>
                 @elseif ($key === 'mod')
                     <select wire:model.live="data.mod" class="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-sm text-slate-900 dark:text-slate-100">
                         <option value="No">{{ __('finance.no') }}</option>

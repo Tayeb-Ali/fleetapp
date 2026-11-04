@@ -36,7 +36,7 @@ class RegisterVehicle extends Component
 
     public function mount(): void
     {
-        $fields = config('fleet.create_fields', ['brand', 'model', 'vin', 'fuel', 'pdate', 'supplier', 'cost', 'bl', 'voy', 'pol', 'pod', 'ship', 'arr', 'remarks']);
+        $fields = config('fleet.create_fields', ['brand', 'model', 'vin', 'fuel', 'pdate', 'supplier', 'cost', 'bl', 'bl_release', 'voy', 'pol', 'pod', 'ship', 'arr', 'remarks']);
         $this->data = array_fill_keys($fields, '');
 
         $base = app(CurrencyService::class)->base();

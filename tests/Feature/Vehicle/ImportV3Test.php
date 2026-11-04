@@ -29,7 +29,7 @@ class ImportV3Test extends TestCase
         $header = [
             'Brand Name', 'Vehicle Type & Model', 'Fuel/Engine Size', 'Purchase Date', 'Purchase Value',
             'Currency', 'In USD', 'Modified (Yes/No)', 'Current Location', 'Chassis No.',
-            'POL', 'POD', 'Voyage Number', 'Final Destination', 'B/L Number',
+            'POL', 'POD', 'Voyage Number', 'Final Destination', 'B/L Number', 'BL Release (Yes/No)',
             'Shipping Date', 'Arrival Date', 'Shipping Cost', 'Currency',
             'Landed Cost', 'Modification Cost', 'Total Cost',
             'Client', 'Sales Date', 'Sales Value', 'Currency', 'Remarks', 'Status',
@@ -60,7 +60,7 @@ class ImportV3Test extends TestCase
             [
                 'TOYOTA', 'HILUX 2025', 'Petrol', '2026-01-10', 3672.5,
                 'AED', 1000, 'No', 'Sawakin', 'VIN-V3-1',
-                'Jeddah', 'Sawakin', 'JBF151', 'PZU FZ', 'BL-V3-1',
+                'Jeddah', 'Sawakin', 'JBF151', 'PZU FZ', 'BL-V3-1', 'Yes',
                 '2026-02-01', '2026-03-01', 367.25, 'AED',
                 50, 0, 1050,
                 'Buyer A', '2026-04-01', 7345, 'AED', 'note', 'Sold',
@@ -81,6 +81,7 @@ class ImportV3Test extends TestCase
         $this->assertEqualsWithDelta(100.0, (float) $vehicle->shipping_base_amount, 0.01);
         $this->assertEqualsWithDelta(50.0, (float) $vehicle->landed_cost, 0.01);
         $this->assertSame('sold', $vehicle->stageValue());
+        $this->assertSame('Yes', $vehicle->bl_release);
 
         unlink($path);
     }
@@ -91,7 +92,7 @@ class ImportV3Test extends TestCase
             [
                 'NISSAN', 'PATROL', 'Petrol', '2026-01-10', 1000,
                 'QAR', 1000, 'No', '', 'VIN-V3-2',
-                '', '', '', '', '',
+                '', '', '', '', '', '',
                 '', '', '', '',
                 '', '', '',
                 '', '', '', '', '', 'Not shipped',
@@ -119,7 +120,7 @@ class ImportV3Test extends TestCase
             [
                 'TOYOTA', 'RAV4', 'Petrol', '2026-01-10', 1000,
                 'USD', 1000, 'No', '', 'VIN-V3-3',
-                '', '', '', '', '',
+                '', '', '', '', '', '',
                 '', '', '', '',
                 '', '', '',
                 '', '', '', '', '', 'Not shipped',
@@ -139,7 +140,7 @@ class ImportV3Test extends TestCase
             [
                 'TOYOTA', 'HILUX', 'Petrol', '2026-01-10', 1000,
                 'USD', 1000, 'Yes - Workshop', '', 'VIN-V3-5',
-                '', '', '', '', '',
+                '', '', '', '', '', '',
                 '', '', '', '',
                 '', 500, '',
                 '', '', '', '', '', 'Not shipped',
@@ -162,7 +163,7 @@ class ImportV3Test extends TestCase
             [
                 'TOYOTA', 'HILUX', 'Petrol', '2026-01-10', 1000,
                 'USD', 1000, 'No', '', 'VIN-V3-4',
-                '', '', '', '', '',
+                '', '', '', '', '', '',
                 '', '', '', '',
                 '', 999, '',
                 '', '', '', '', '', 'Not shipped',
@@ -175,6 +176,67 @@ class ImportV3Test extends TestCase
 
         $this->assertSame('No', $vehicle->mod);
         $this->assertNull($vehicle->modification_cost);
+
+        unlink($path);
+    }
+
+    public function test_bl_release_imports_yes_no_and_blank(): void
+    {
+        $path = $this->makeV3File([
+            [
+                'TOYOTA', 'HILUX', 'Petrol', '2026-01-10', 1000,
+                'USD', 1000, 'No', '', 'VIN-V3-6',
+                '', '', '', '', '', 'Yes',
+                '', '', '', '',
+                '', '', '',
+                '', '', '', '', '', 'Not shipped',
+            ],
+            [
+                'TOYOTA', 'HILUX', 'Petrol', '2026-01-10', 1000,
+                'USD', 1000, 'No', '', 'VIN-V3-7',
+                '', '', '', '', '', 'No',
+                '', '', '', '',
+                '', '', '',
+                '', '', '', '', '', 'Not shipped',
+            ],
+            [
+                'TOYOTA', 'HILUX', 'Petrol', '2026-01-10', 1000,
+                'USD', 1000, 'No', '', 'VIN-V3-8',
+                '', '', '', '', '', '',
+                '', '', '', '',
+                '', '', '',
+                '', '', '', '', '', 'Not shipped',
+            ],
+        ]);
+
+        $result = app(ImportVehiclesFromExcelAction::class)->execute($path);
+
+        $this->assertSame(3, $result['imported']);
+        $this->assertSame('Yes', Vehicle::query()->find('VIN-V3-6')->bl_release);
+        $this->assertSame('No', Vehicle::query()->find('VIN-V3-7')->bl_release);
+        $this->assertNull(Vehicle::query()->find('VIN-V3-8')->bl_release);
+
+        unlink($path);
+    }
+
+    public function test_unrecognised_bl_release_value_is_reported(): void
+    {
+        $path = $this->makeV3File([
+            [
+                'TOYOTA', 'HILUX', 'Petrol', '2026-01-10', 1000,
+                'USD', 1000, 'No', '', 'VIN-V3-9',
+                '', '', '', '', '', 'Maybe',
+                '', '', '', '',
+                '', '', '',
+                '', '', '', '', '', 'Not shipped',
+            ],
+        ]);
+
+        $result = app(ImportVehiclesFromExcelAction::class)->execute($path);
+
+        $this->assertSame(1, $result['imported']);
+        $this->assertNull(Vehicle::query()->find('VIN-V3-9')->bl_release);
+        $this->assertStringContainsString('Maybe', implode(' ', $result['warnings']));
 
         unlink($path);
     }

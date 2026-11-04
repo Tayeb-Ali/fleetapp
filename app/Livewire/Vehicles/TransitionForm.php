@@ -276,6 +276,7 @@ class TransitionForm extends Component
                 'number' => ['nullable', 'numeric', 'min:0'],
                 'date' => ['nullable', 'date_format:Y-m-d'],
                 'currency' => ['nullable', 'string', 'max:8', 'regex:/^[A-Za-z]{3,8}$/'],
+                'yesno' => ['nullable', 'in:Yes,No'],
                 default => ['nullable', 'string', 'max:2000'],
             };
             $attributes[$field] = __('vehicles.'.$field);

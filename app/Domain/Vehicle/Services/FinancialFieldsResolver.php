@@ -94,6 +94,10 @@ class FinancialFieldsResolver
             $data['modification_cost'] = null;
         }
 
+        if (array_key_exists('bl_release', $data)) {
+            $data['bl_release'] = self::normalizeYesNo($data['bl_release']);
+        }
+
         return $data;
     }
 
@@ -142,13 +146,45 @@ class FinancialFieldsResolver
     }
 
     /**
-     * The tracker uses qualified answers such as "Yes - Workshop"; any value
-     * starting with "yes" counts as modified.
+     * Canonical Yes/No value; unknown answers are left null so the importer
+     * can warn instead of silently recording "No".
      */
-    public static function isModified(mixed $value): bool
+    public static function normalizeYesNo(mixed $value): ?string
+    {
+        if (is_bool($value)) {
+            return $value ? 'Yes' : 'No';
+        }
+
+        if ($value === null || trim((string) $value) === '') {
+            return null;
+        }
+
+        $text = strtolower(trim((string) $value));
+
+        if (self::isYes($text)) {
+            return 'Yes';
+        }
+
+        if (str_starts_with($text, 'no') || in_array($text, ['n', '0', 'false'], true)) {
+            return 'No';
+        }
+
+        return null;
+    }
+
+    /**
+     * The tracker uses qualified answers such as "Yes - Workshop"; any value
+     * starting with "yes" counts as modified/released.
+     */
+    public static function isYes(mixed $value): bool
     {
         $text = strtolower(trim((string) $value));
 
-        return $text !== '' && (str_starts_with($text, 'yes') || in_array($text, ['y', '1', 'true'], true));
+        return $text !== '' && (str_starts_with($text, 'yes') || in_array($text, ['y', '1', 'true', 'released'], true));
+    }
+
+    public static function isModified(mixed $value): bool
+    {
+        return self::isYes($value);
     }
 }

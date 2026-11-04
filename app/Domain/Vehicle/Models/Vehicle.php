@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Vehicle\Models;
 
 use App\Domain\Vehicle\Enums\VehicleStage;
+use App\Domain\Vehicle\Services\FinancialFieldsResolver;
 use App\Domain\Vehicle\Services\VehicleCostService;
 use Database\Factories\VehicleFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -232,6 +233,11 @@ class Vehicle extends Model
     public function getIsModifiedAttribute(): bool
     {
         return $this->isModified();
+    }
+
+    public function isBlReleased(): bool
+    {
+        return FinancialFieldsResolver::isYes($this->bl_release);
     }
 
     public function stageValue(): string

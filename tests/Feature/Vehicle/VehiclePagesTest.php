@@ -98,6 +98,28 @@ class VehiclePagesTest extends TestCase
         $this->actingAs($user)->get('/vehicles/UNKNOWN-VIN-XYZ')->assertNotFound();
     }
 
+    public function test_show_page_localizes_bl_release_status(): void
+    {
+        $user = $this->makeUser('purchaser');
+        $vehicle = Vehicle::factory()->create([
+            'vin' => 'VP-BL-001',
+            'bl' => 'BL-001',
+            'bl_release' => 'No',
+        ]);
+
+        app()->setLocale('ar');
+
+        Livewire::actingAs($user)->test(VehicleShow::class, ['vin' => $vehicle->vin])
+            ->assertSee('إفراج بوليصة الشحن')
+            ->assertSee('لا');
+
+        app()->setLocale('en');
+
+        Livewire::actingAs($user)->test(VehicleShow::class, ['vin' => $vehicle->vin])
+            ->assertSee('B/L release')
+            ->assertSee('No');
+    }
+
     public function test_admin_can_delete_vehicle(): void
     {
         $admin = $this->makeUser('admin');

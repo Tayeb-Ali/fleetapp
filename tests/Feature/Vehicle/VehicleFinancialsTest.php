@@ -188,6 +188,34 @@ class VehicleFinancialsTest extends TestCase
         $this->assertEqualsWithDelta(725.0, $breakdown->profit, 0.01);
     }
 
+    public function test_tracker_can_update_bl_release(): void
+    {
+        $tracker = $this->makeUser('tracker');
+        $vehicle = Vehicle::factory()->create(['vin' => 'VIN-FIN-10', 'bl_release' => 'Yes']);
+
+        Livewire::actingAs($tracker)
+            ->test(VehicleFinancials::class, ['vin' => $vehicle->vin])
+            ->set('form.bl_release', 'No')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame('No', $vehicle->fresh()->bl_release);
+    }
+
+    public function test_bl_release_rejects_values_outside_yes_no(): void
+    {
+        $admin = $this->makeUser('admin');
+        $vehicle = Vehicle::factory()->create(['vin' => 'VIN-FIN-11', 'bl_release' => 'Yes']);
+
+        Livewire::actingAs($admin)
+            ->test(VehicleFinancials::class, ['vin' => $vehicle->vin])
+            ->set('form.bl_release', 'Maybe')
+            ->call('save')
+            ->assertHasErrors(['form.bl_release']);
+
+        $this->assertSame('Yes', $vehicle->fresh()->bl_release);
+    }
+
     public function test_saving_a_foreign_amount_without_a_rate_is_rejected(): void
     {
         $admin = $this->makeUser('admin');

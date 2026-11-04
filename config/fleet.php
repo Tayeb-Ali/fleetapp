@@ -55,6 +55,7 @@ return [
         'purchase_currency' => ['Purchase currency', 'currency'],
         'purchase_fx_rate' => ['Purchase exchange rate (per 1 base)', 'number'],
         'bl' => ['Bill of Lading No. (B/L)', 'text'],
+        'bl_release' => ['B/L release', 'yesno'],
         'voy' => ['Voyage No.', 'text'],
         'pol' => ['Port of loading', 'text'],
         'pod' => ['Port of discharge', 'text'],
@@ -84,11 +85,11 @@ return [
         'stage' => ['Stage', 'select'],
     ],
 
-    'create_fields' => ['brand', 'model', 'vin', 'fuel', 'mod', 'pdate', 'supplier', 'cost', 'purchase_currency', 'purchase_fx_rate', 'modification_cost', 'bl', 'voy', 'pol', 'pod', 'ship', 'arr', 'remarks'],
+    'create_fields' => ['brand', 'model', 'vin', 'fuel', 'mod', 'pdate', 'supplier', 'cost', 'purchase_currency', 'purchase_fx_rate', 'modification_cost', 'bl', 'bl_release', 'voy', 'pol', 'pod', 'ship', 'arr', 'remarks'],
     'create_required' => ['model', 'vin'],
 
     'transitions' => [
-        'ship' => ['label' => 'Register shipment', 'from' => ['purchased'], 'to' => 'shipped', 'roles' => ['purchaser', 'tracker'], 'fields' => ['bl', 'voy', 'pol', 'pod', 'dest', 'ship', 'arr', 'shipping_cost', 'shipping_currency', 'shipping_fx_rate'], 'required' => ['bl', 'ship']],
+        'ship' => ['label' => 'Register shipment', 'from' => ['purchased'], 'to' => 'shipped', 'roles' => ['purchaser', 'tracker'], 'fields' => ['bl', 'bl_release', 'voy', 'pol', 'pod', 'dest', 'ship', 'arr', 'shipping_cost', 'shipping_currency', 'shipping_fx_rate'], 'required' => ['bl', 'ship']],
         'arrive' => ['label' => 'Confirm arrival at port', 'from' => ['shipped'], 'to' => 'arrived', 'roles' => ['tracker'], 'fields' => ['arr', 'pod'], 'required' => ['arr']],
         'clear1' => ['label' => 'Start customs clearance', 'from' => ['arrived'], 'to' => 'clearing', 'roles' => ['customs'], 'fields' => ['cust_no'], 'required' => ['cust_no']],
         'clear2' => ['label' => 'Complete customs clearance', 'from' => ['clearing'], 'to' => 'cleared', 'roles' => ['customs'], 'fields' => ['cust_no', 'cust_date', 'landed_cost'], 'required' => ['cust_no', 'cust_date']],

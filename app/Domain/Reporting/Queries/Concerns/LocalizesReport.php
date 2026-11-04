@@ -6,6 +6,7 @@ namespace App\Domain\Reporting\Queries\Concerns;
 
 use App\Domain\Identity\Services\SettingsService;
 use App\Domain\Identity\Support\DateDisplay;
+use App\Domain\Vehicle\Services\FinancialFieldsResolver;
 
 /**
  * Localized labels + value formatting shared by report queries.
@@ -64,6 +65,16 @@ trait LocalizesReport
         }
 
         return DateDisplay::short($value);
+    }
+
+    /** Localized Yes/No value; blank when the status is unknown. */
+    protected function formatYesNo(mixed $value): string
+    {
+        return match (FinancialFieldsResolver::normalizeYesNo($value)) {
+            'Yes' => (string) __('finance.yes'),
+            'No' => (string) __('finance.no'),
+            default => '',
+        };
     }
 
     /** Money value with the configured currency, e.g. "30,000.00 USD". */

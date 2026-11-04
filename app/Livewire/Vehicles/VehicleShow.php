@@ -6,6 +6,7 @@ namespace App\Livewire\Vehicles;
 
 use App\Domain\Identity\Support\DateDisplay;
 use App\Domain\Vehicle\Models\Vehicle;
+use App\Domain\Vehicle\Services\FinancialFieldsResolver;
 use App\Domain\Vehicle\VehicleMeta;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -99,6 +100,15 @@ class VehicleShow extends Component
         return redirect()->route('vehicles.index');
     }
 
+    protected function yesNoLabel(mixed $value): string
+    {
+        return match (FinancialFieldsResolver::normalizeYesNo($value)) {
+            'Yes' => (string) __('finance.yes'),
+            'No' => (string) __('finance.no'),
+            default => '',
+        };
+    }
+
     public function render()
     {
         $vehicle = $this->vehicle();
@@ -108,7 +118,15 @@ class VehicleShow extends Component
         $fields = VehicleMeta::fields();
 
         foreach ($fields as $key => $meta) {
-            if (($meta[1] ?? '') !== 'date' || empty($vehicle[$key])) {
+            $type = $meta[1] ?? '';
+
+            if ($type === 'yesno') {
+                $vehicle[$key] = $this->yesNoLabel($vehicle[$key] ?? null);
+
+                continue;
+            }
+
+            if ($type !== 'date' || empty($vehicle[$key])) {
                 continue;
             }
 

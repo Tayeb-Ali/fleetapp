@@ -29,6 +29,8 @@ class VehiclesSeederTest extends TestCase
             'vin' => 'JTMAB7BJ8S4201248',
             'brand' => 'TOYOTA',
             'stage' => 'sold',
+            'bl_release' => 'Yes',
         ]);
+        $this->assertSame(['Yes'], array_values(array_unique(array_column($snapshot['rows'], 'bl_release'))));
     }
 }

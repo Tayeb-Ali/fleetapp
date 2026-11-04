@@ -82,7 +82,7 @@ class LegacyImporter
             $stage = $map[$record['status'] ?? ''] ?? 'purchased';
         }
 
-        $keys = ['brand', 'model', 'fuel', 'mod', 'pdate', 'supplier', 'cost', 'bl', 'voy', 'pol', 'pod', 'dest', 'ship', 'arr', 'cust_no', 'cust_date', 'duty', 'loc', 'in_date', 'ord_no', 'client', 'phone', 'price', 'paid', 'sale_date', 'recv', 'del_date', 'remarks',
+        $keys = ['brand', 'model', 'fuel', 'mod', 'pdate', 'supplier', 'cost', 'bl', 'bl_release', 'voy', 'pol', 'pod', 'dest', 'ship', 'arr', 'cust_no', 'cust_date', 'duty', 'loc', 'in_date', 'ord_no', 'client', 'phone', 'price', 'paid', 'sale_date', 'recv', 'del_date', 'remarks',
             // New financial columns (kept when the source already uses the new schema).
             'purchased_at', 'purchase_currency', 'purchase_fx_rate', 'purchase_base_amount',
             'shipped_at', 'shipping_cost', 'shipping_currency', 'shipping_fx_rate', 'shipping_base_amount',

@@ -7,6 +7,7 @@ namespace App\Domain\Reporting\Queries;
 use App\Domain\Reporting\Contracts\ReportQuery;
 use App\Domain\Reporting\Queries\Concerns\FetchesVehicles;
 use App\Domain\Reporting\Queries\Concerns\LocalizesReport;
+use App\Domain\Vehicle\Services\FinancialFieldsResolver;
 
 /** Legacy REP.shipments — grouped by voyage_no (+ ship date). */
 class ShipmentsReport implements ReportQuery
@@ -35,6 +36,7 @@ class ShipmentsReport implements ReportQuery
             $this->column('vehicle_count'),
             $this->column('still_in_transit'),
             $this->column('arrived_or_later'),
+            $this->column('bl_pending'),
         ];
     }
 
@@ -60,6 +62,7 @@ class ShipmentsReport implements ReportQuery
                 count($a),
                 count(array_filter($a, fn ($x) => ($x['stage'] ?? null) === 'shipped')),
                 count(array_filter($a, fn ($x) => ! in_array($x['stage'] ?? null, ['purchased', 'shipped'], true))),
+                count(array_filter($a, fn ($x) => FinancialFieldsResolver::normalizeYesNo($x['bl_release'] ?? null) === 'No')),
             ];
         }
 
@@ -75,6 +78,7 @@ class ShipmentsReport implements ReportQuery
             $row[5],
             $row[6],
             $row[7],
+            $row[8],
         ], $rows);
     }
 }
